@@ -1,5 +1,4 @@
-﻿using System;
-using Ini.Serializer.Contracts;
+﻿using Ini.Serializer.Contracts;
 using Ini.Serializer.Services;
 
 namespace Ini.Serializer.Extensions;

@@ -1,9 +1,6 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
-using System.Text;
 using Ini.Serializer.Contracts;
 using Ini.Serializer.Extensions;
 
@@ -67,7 +64,7 @@ public class IniSerializer
 
         if (this.TryGetConverter(effectiveType, out var converter))
         {
-            return converter.Deserialize(rawValue, effectiveType, this);
+            return converter!.Deserialize(rawValue, effectiveType, this);
         }
 
         if (effectiveType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(effectiveType))

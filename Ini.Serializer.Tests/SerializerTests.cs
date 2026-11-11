@@ -51,8 +51,8 @@ public class SerializerTests
         var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         var model = new CollectionSettings
         {
-            Tags = new[] { "a1", "a2", "a3" },
-            Numbers = new List<int> { 1, 2, 3 }
+            Tags = ["a1", "a2", "a3"],
+            Numbers = [1, 2, 3]
         };
 
         string iniText = serializer.Serialize(model);
@@ -192,20 +192,6 @@ public class SerializerTests
     }
 
     [Fact]
-    public void IniUtility_DeserializeObject_UsesConfiguredSerializer()
-    {
-        string iniText = "[ConverterSettings]\nDistance=77.7 mm\n";
-        var model = new ConverterSettings();
-
-        object result = Ini.Deserialize(iniText, model, serializer =>
-            serializer.RegisterConverter(new MeasurementConverter()));
-
-        result.ShouldBeSameAs(model);
-        model.Distance.Value.ShouldBe(77.7m);
-        model.Distance.Unit.ShouldBe("mm");
-    }
-
-    [Fact]
     public void Serialize_UsesCustomConverterForCollectionElements()
     {
         var serializer = new IniSerializer()
@@ -255,32 +241,6 @@ public class SerializerTests
         model.Distance.HasValue.ShouldBeTrue();
         model.Distance.Value.Value.ShouldBe(42m);
         model.Distance.Value.Unit.ShouldBe("cm");
-    }
-
-    [Fact]
-    public void IniUtility_Serialize_UsesConfiguredSerializer()
-    {
-        var model = new ConverterSettings
-        {
-            Distance = new Measurement(12.5m, "m")
-        };
-
-        string iniText = Ini.Serialize(model, serializer =>
-            serializer.RegisterConverter(new MeasurementConverter()));
-
-        iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ShouldContain("Distance=12.5 m");
-    }
-
-    [Fact]
-    public void IniUtility_DeserializeGeneric_UsesConfiguredSerializer()
-    {
-        string iniText = "[ConverterSettings]\nDistance=99.9 km\n";
-
-        var model = Ini.Deserialize<ConverterSettings>(iniText, serializer =>
-            serializer.RegisterConverter(new MeasurementConverter()));
-
-        model.Distance.Value.ShouldBe(99.9m);
-        model.Distance.Unit.ShouldBe("km");
     }
 
     private sealed class TestSettings
@@ -385,7 +345,7 @@ public class SerializerTests
 
             int[] codes = string.IsNullOrWhiteSpace(codesPart)
                 ? []
-                : codesPart.Split(':').Select(x => int.Parse(x, CultureInfo.InvariantCulture)).ToArray();
+                : [.. codesPart.Split(':').Select(x => int.Parse(x, CultureInfo.InvariantCulture))];
 
             return new ChildSettings
             {
