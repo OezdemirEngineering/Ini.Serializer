@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
-
-using Ini.Serializer.Converters;
+using Ini.Serializer.Contracts;
 using Ini.Serializer.Extensions;
 
-namespace Ini.Serializer;
+namespace Ini.Serializer.Services;
 
 public class IniSerializer
 {

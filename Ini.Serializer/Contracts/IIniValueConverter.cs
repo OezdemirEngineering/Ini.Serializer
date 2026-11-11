@@ -1,6 +1,7 @@
+using Ini.Serializer.Services;
 using System;
 
-namespace Ini.Serializer.Converters;
+namespace Ini.Serializer.Contracts;
 
 public interface IIniValueConverter
 {

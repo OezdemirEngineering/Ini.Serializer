@@ -3,6 +3,8 @@ using Shouldly;
 
 using Ini.Serializer.Converters;
 using Ini.Serializer.Extensions;
+using Ini.Serializer.Contracts;
+using Ini.Serializer.Services;
 
 namespace Ini.Serializer.Tests;
 
@@ -11,7 +13,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_ReturnsSectionAndKeysFromModelProperties()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer();
+        var serializer = new IniSerializer();
         var model = new TestSettings
         {
             Name = "Max",
@@ -31,7 +33,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_SetsModelPropertiesFromIniText()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer();
+        var serializer = new IniSerializer();
         string iniText = "[TestSettings]\nName=Anna\nAge=44\nIsEnabled=False\n";
 
         var model = new TestSettings();
@@ -46,7 +48,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_FormatsCollectionsAsBracketedList()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer().RegisterConverter(new BracketCollectionConverter());
+        var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         var model = new CollectionSettings
         {
             Tags = new[] { "a1", "a2", "a3" },
@@ -63,7 +65,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_ParsesCollectionsFromBracketedList()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer().RegisterConverter(new BracketCollectionConverter());
+        var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         string iniText = "[CollectionSettings]\nTags=[x1,x2,x3]\nNumbers=[7,8,9]\n";
 
         var model = new CollectionSettings();
@@ -77,7 +79,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesNestedSectionsForNestedModels()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer().RegisterConverter(new BracketCollectionConverter());
+        var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         var model = new ParentSettings
         {
             Name = "Root",
@@ -101,7 +103,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_ReadsNestedSectionIntoNestedModel()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer().RegisterConverter(new BracketCollectionConverter());
+        var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         string iniText = "[ParentSettings]\nName=Configured\n[ParentSettings.ChildSettings]\nFlag=False\nCodes=[1,2,3]\n";
 
         var model = new ParentSettings();
@@ -117,7 +119,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesRegisteredConvertersForCollectionOfClassElements()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new ChildSettingsConverter());
 
@@ -141,7 +143,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_UsesRegisteredConvertersForCollectionOfClassElements()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new ChildSettingsConverter());
         string iniText = "[ParentWithChildrenSettings]\nName=Root\nChildren=[True 10,False 20:30]\n";
@@ -161,7 +163,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesCustomConverterForUnsupportedType()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new MeasurementConverter());
 
         var model = new ConverterSettings
@@ -177,7 +179,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_UsesCustomConverterForUnsupportedType()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new MeasurementConverter());
 
         string iniText = "[ConverterSettings]\nDistance=99.9 km\n";
@@ -190,9 +192,23 @@ public class SerializerTests
     }
 
     [Fact]
+    public void IniUtility_DeserializeObject_UsesConfiguredSerializer()
+    {
+        string iniText = "[ConverterSettings]\nDistance=77.7 mm\n";
+        var model = new ConverterSettings();
+
+        object result = Ini.Deserialize(iniText, model, serializer =>
+            serializer.RegisterConverter(new MeasurementConverter()));
+
+        result.ShouldBeSameAs(model);
+        model.Distance.Value.ShouldBe(77.7m);
+        model.Distance.Unit.ShouldBe("mm");
+    }
+
+    [Fact]
     public void Serialize_UsesCustomConverterForCollectionElements()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new MeasurementConverter());
 
@@ -209,7 +225,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_UsesCustomConverterForCollectionElements()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new MeasurementConverter());
 
@@ -228,7 +244,7 @@ public class SerializerTests
     [Fact]
     public void Deserialize_UsesCustomConverterForNullableType()
     {
-        var serializer = new global::Ini.Serializer.IniSerializer()
+        var serializer = new IniSerializer()
             .RegisterConverter(new MeasurementConverter());
 
         string iniText = "[NullableConverterSettings]\nDistance=42 cm\n";
@@ -249,7 +265,7 @@ public class SerializerTests
             Distance = new Measurement(12.5m, "m")
         };
 
-        string iniText = global::Ini.Serializer.Ini.Serialize(model, serializer =>
+        string iniText = Ini.Serialize(model, serializer =>
             serializer.RegisterConverter(new MeasurementConverter()));
 
         iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ShouldContain("Distance=12.5 m");
@@ -260,7 +276,7 @@ public class SerializerTests
     {
         string iniText = "[ConverterSettings]\nDistance=99.9 km\n";
 
-        ConverterSettings model = global::Ini.Serializer.Ini.Deserialize<ConverterSettings>(iniText, serializer =>
+        var model = Ini.Deserialize<ConverterSettings>(iniText, serializer =>
             serializer.RegisterConverter(new MeasurementConverter()));
 
         model.Distance.Value.ShouldBe(99.9m);
@@ -323,7 +339,7 @@ public class SerializerTests
             return type == typeof(Measurement);
         }
 
-        public string Serialize(object? value, Type declaredType, global::Ini.Serializer.IniSerializer serializer)
+        public string Serialize(object? value, Type declaredType, global::Ini.Serializer.Services.IniSerializer serializer)
         {
             if (value is null)
             {
@@ -334,7 +350,7 @@ public class SerializerTests
             return $"{measurement.Value.ToString(CultureInfo.InvariantCulture)} {measurement.Unit}";
         }
 
-        public object? Deserialize(string rawValue, Type targetType, global::Ini.Serializer.IniSerializer serializer)
+        public object? Deserialize(string rawValue, Type targetType, global::Ini.Serializer.Services.IniSerializer serializer)
         {
             int separatorIndex = rawValue.IndexOf(' ');
             string valuePart = separatorIndex >= 0 ? rawValue[..separatorIndex] : rawValue;
@@ -351,7 +367,7 @@ public class SerializerTests
             return type == typeof(ChildSettings);
         }
 
-        public string Serialize(object? value, Type declaredType, global::Ini.Serializer.IniSerializer serializer)
+        public string Serialize(object? value, Type declaredType, global::Ini.Serializer.Services.IniSerializer serializer)
         {
             if (value is not ChildSettings child)
             {
@@ -361,7 +377,7 @@ public class SerializerTests
             return $"{child.Flag} {string.Join(':', child.Codes)}";
         }
 
-        public object? Deserialize(string rawValue, Type targetType, global::Ini.Serializer.IniSerializer serializer)
+        public object? Deserialize(string rawValue, Type targetType, global::Ini.Serializer.Services.IniSerializer serializer)
         {
             int separatorIndex = rawValue.IndexOf(' ');
             string flagPart = separatorIndex >= 0 ? rawValue[..separatorIndex] : rawValue;
