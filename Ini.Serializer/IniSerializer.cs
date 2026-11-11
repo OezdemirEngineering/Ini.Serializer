@@ -125,39 +125,42 @@ public class IniSerializer
 
     private void DeserializeSection(object dataModel, string sectionPath, Dictionary<string, Dictionary<string, string>> sections)
     {
-        Type modelType = dataModel.GetType();
-        PropertyInfo[] props = modelType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
+        PropertyInfo[] props = dataModel.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
         sections.TryGetValue(sectionPath, out Dictionary<string, string>? valuesByName);
 
         foreach (PropertyInfo prop in props)
         {
+            if (!prop.CanWrite)
+            {
+                continue;
+            }
+
             if (IsComplexModelType(prop.PropertyType))
             {
-                if (!prop.CanRead || !prop.CanWrite)
+                if (!prop.CanRead)
                 {
                     continue;
                 }
 
-                object? currentValue = prop.GetValue(dataModel, null);
-                if (currentValue is null)
+                object? nestedModel = prop.GetValue(dataModel, null);
+                if (nestedModel is null)
                 {
                     Type nestedType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-                    currentValue = Activator.CreateInstance(nestedType);
-                    if (currentValue is null)
+                    nestedModel = Activator.CreateInstance(nestedType);
+                    if (nestedModel is null)
                     {
                         continue;
                     }
 
-                    prop.SetValue(dataModel, currentValue, null);
+                    prop.SetValue(dataModel, nestedModel, null);
                 }
 
-                string childSectionPath = sectionPath + "." + currentValue.GetType().Name;
-                DeserializeSection(currentValue, childSectionPath, sections);
+                string nestedSectionPath = string.Format("{0}.{1}", sectionPath, nestedModel.GetType().Name);
+                DeserializeSection(nestedModel, nestedSectionPath, sections);
                 continue;
             }
 
-            if (!prop.CanWrite || valuesByName is null || !valuesByName.TryGetValue(prop.Name, out string? rawValue))
+            if (valuesByName is null || !valuesByName.TryGetValue(prop.Name, out string? rawValue))
             {
                 continue;
             }
@@ -202,7 +205,7 @@ public class IniSerializer
     private static Dictionary<string, Dictionary<string, string>> ParseIniSections(string iniText)
     {
         var sections = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        string[] lines = iniText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = iniText.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
         string? currentSection = null;
 
         foreach (string line in lines)
