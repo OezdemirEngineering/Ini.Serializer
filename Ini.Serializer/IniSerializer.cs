@@ -18,9 +18,9 @@ public class IniSerializer
     {
         ArgumentNullException.ThrowIfNull(dataModel);
 
-        var builder = new StringBuilder();
-        SerializeSection(dataModel, dataModel.GetType().Name, builder);
-        return builder.ToString();
+        string serializedStr = string.Empty;
+        serializedStr = SerializeSection(dataModel, dataModel.GetType().Name, serializedStr);
+        return serializedStr;
     }
 
     public object Deserialize(string iniText, object dataModel)
@@ -44,7 +44,7 @@ public class IniSerializer
         Type targetType = Nullable.GetUnderlyingType(declaredType) ?? declaredType;
         if (this.TryGetConverter(targetType, out var converter))
         {
-            return converter.Serialize(value, targetType, this);
+            return converter!.Serialize(value, targetType, this);
         }
 
         if (targetType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(targetType))
@@ -94,13 +94,11 @@ public class IniSerializer
         return Convert.ChangeType(rawValue, effectiveType, CultureInfo.InvariantCulture);
     }
 
-    private void SerializeSection(object dataModel, string sectionPath, StringBuilder builder)
+    private string SerializeSection(object dataModel, string sectionPath, string serializedStr)
     {
-        Type modelType = dataModel.GetType();
-        PropertyInfo[] props = modelType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+        serializedStr+=string.Format("[{0}]{1}", sectionPath, Environment.NewLine);
 
-        builder.Append('[').Append(sectionPath).AppendLine("]");
-
+        PropertyInfo[] props = dataModel.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
         foreach (PropertyInfo prop in props)
         {
             if (!prop.CanRead)
@@ -116,15 +114,13 @@ public class IniSerializer
 
             if (IsComplexModelType(prop.PropertyType))
             {
-                string childSectionPath = sectionPath + "." + value.GetType().Name;
-                SerializeSection(value, childSectionPath, builder);
+                serializedStr = SerializeSection(value, string.Format("{0}.{1}", sectionPath, value.GetType().Name), serializedStr);
                 continue;
             }
 
-            builder.Append(prop.Name)
-                   .Append('=')
-                   .AppendLine(SerializeValue(value, prop.PropertyType));
+            serializedStr +=string.Format("{0}={1}{2}", prop.Name, SerializeValue(value, prop.PropertyType), Environment.NewLine);
         }
+        return serializedStr;
     }
 
     private void DeserializeSection(object dataModel, string sectionPath, Dictionary<string, Dictionary<string, string>> sections)
