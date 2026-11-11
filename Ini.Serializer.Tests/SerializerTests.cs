@@ -4,6 +4,7 @@ using Shouldly;
 using Ini.Serializer.Converters;
 using Ini.Serializer.Extensions;
 using Ini.Serializer.Contracts;
+using Ini.Serializer.Expressions;
 using Ini.Serializer.Services;
 
 namespace Ini.Serializer.Tests;
@@ -243,6 +244,36 @@ public class SerializerTests
         model.Distance.Value.Unit.ShouldBe("cm");
     }
 
+    [Fact]
+    public void Deserialize_StoresRoslynExpression_WithSingleParameter()
+    {
+        var serializer = new IniSerializer()
+            .RegisterExpressions();
+
+        string iniText = "[ExpressionSettings]\nExpressionY=x * x + 2\n";
+        var model = new ExpressionSettings();
+
+        serializer.Deserialize(iniText, model);
+
+        model.ExpressionY.ShouldNotBeNull();
+        model.ExpressionY!.Execute(("x", 5)).ShouldBe(27d);
+    }
+
+    [Fact]
+    public void Deserialize_StoresRoslynExpression_WithMultipleParameters()
+    {
+        var serializer = new IniSerializer()
+            .RegisterExpressions();
+
+        string iniText = "[ExpressionSettings]\nExpressionY=x * y + z\n";
+        var model = new ExpressionSettings();
+
+        serializer.Deserialize(iniText, model);
+
+        model.ExpressionY.ShouldNotBeNull();
+        model.ExpressionY!.Execute(("x", 2), ("y", 4), ("z", 3)).ShouldBe(11d);
+    }
+
     private sealed class TestSettings
     {
         public string Name { get; set; } = string.Empty;
@@ -289,6 +320,11 @@ public class SerializerTests
     private sealed class NullableConverterSettings
     {
         public Measurement? Distance { get; set; }
+    }
+
+    private sealed class ExpressionSettings
+    {
+        public IniExpression? ExpressionY { get; set; }
     }
 
     private sealed class MeasurementConverter : IIniValueConverter
