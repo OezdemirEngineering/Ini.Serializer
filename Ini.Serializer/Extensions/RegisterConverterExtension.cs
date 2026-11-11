@@ -18,16 +18,20 @@ public static class RegisterConverterExtension
     internal static bool TryGetConverter(
         this IniSerializer iniSerializer, 
         Type targetType, 
-        out IIniValueConverter converter)
+        out IIniValueConverter? converter)
     {
-        for (int i = iniSerializer.CustomConverters.Count - 1; i >= 0; i--)
+
+        var localizedConvertes = iniSerializer.CustomConverters.FindAll(c => c.CanConvert(targetType));
+
+        if(localizedConvertes.Count > 1)
         {
-            IIniValueConverter current = iniSerializer.CustomConverters[i];
-            if (current.CanConvert(targetType))
-            {
-                converter = current;
-                return true;
-            }
+            throw new InvalidOperationException($"Multiple converters found for type '{targetType.FullName}'.");
+        }
+
+        if(localizedConvertes.Count == 1)
+        {
+            converter = localizedConvertes[0];
+            return true;
         }
 
         converter = default;
