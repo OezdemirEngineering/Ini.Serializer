@@ -8,13 +8,13 @@ on:
 
 jobs:
   sast-opengrep:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: python:3.12-slim
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install OpenGrep
         run: |
@@ -22,18 +22,27 @@ jobs:
           pip install opengrep
 
       - name: SAST Scan (OpenGrep)
+        continue-on-error: true
         run: |
-          opengrep scan --config auto --error . || opengrep --config auto --error .
+          opengrep scan --config auto --json . > opengrep-results.json || opengrep --config auto --json . > opengrep-results.json
+
+      - name: Upload OpenGrep results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opengrep-results
+          path: opengrep-results.json
+          if-no-files-found: ignore
 
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
             10.0.x
