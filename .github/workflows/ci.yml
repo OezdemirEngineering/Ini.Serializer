@@ -7,39 +7,32 @@ on:
     branches: ["master"]
 
 jobs:
-  sast-opengrep:
+  sast-semgrep:
     runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Pull OpenGrep container
+      - name: Pull Semgrep container
         run: |
-          if docker pull ghcr.io/opengrep/opengrep:latest; then
-            echo "OPENGREP_IMAGE=ghcr.io/opengrep/opengrep:latest" >> "$GITHUB_ENV"
-          elif docker pull opengrep/opengrep:latest; then
-            echo "OPENGREP_IMAGE=opengrep/opengrep:latest" >> "$GITHUB_ENV"
-          else
-            echo "Could not pull OpenGrep image from GHCR or Docker Hub."
-            exit 1
-          fi
+          docker pull semgrep/semgrep:latest
 
-      - name: SAST Scan (OpenGrep)
+      - name: SAST Scan (Semgrep)
         continue-on-error: true
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/src" \
             -w /src \
-            "$OPENGREP_IMAGE" \
-            scan --config auto --json . > opengrep-results.json
+            semgrep/semgrep:latest \
+            semgrep scan --config auto --json --output semgrep-results.json .
 
-      - name: Upload OpenGrep results
+      - name: Upload Semgrep results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: opengrep-results
-          path: opengrep-results.json
+          name: semgrep-results
+          path: semgrep-results.json
           if-no-files-found: ignore
 
   build-and-test:
