@@ -69,9 +69,7 @@ Workflow: `.github/workflows/nuget-publish.yml`
 - runs on tag push (`v*`) or manual dispatch
 - packs and pushes `.nupkg` + `.snupkg` to NuGet.org
 
-Required repository secret:
-
-- `NUGET_API_KEY`
+Publishing uses GitHub Actions OIDC. Configure a trusted publisher for this repository on NuGet.org and set the GitHub Actions repository variable `NUGET_USER` to the NuGet username associated with that trusted publisher. No `NUGET_API_KEY` repository secret is required.
 
 ---
 
