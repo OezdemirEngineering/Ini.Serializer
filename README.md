@@ -48,6 +48,33 @@ This allows you to keep INI but still get flexible serialization behavior simila
 
 ---
 
+## NuGet packaging & publish
+
+This project is configured for NuGet packaging in `Ini.Serializer.csproj` and includes:
+
+- package metadata (`PackageId`, `Version`, description, tags)
+- symbols package (`.snupkg`)
+- README inside package (`PackageReadmeFile`)
+
+### Local pack
+
+```bash
+dotnet pack Ini.Serializer/Ini.Serializer.csproj -c Release -o ./artifacts
+```
+
+### GitHub publish workflow
+
+Workflow: `.github/workflows/nuget-publish.yml`
+
+- runs on tag push (`v*`) or manual dispatch
+- packs and pushes `.nupkg` + `.snupkg` to NuGet.org
+
+Required repository secret:
+
+- `NUGET_API_KEY`
+
+---
+
 ## Quick start
 
 ```csharp
