@@ -37,6 +37,7 @@ This allows you to keep INI but still get flexible serialization behavior simila
 - Nested model sections via dot path (`[Parent.Child]`)
 - Full converter extensibility (`IIniValueConverter`)
 - Optional collection support via converter (`BracketCollectionConverter`)
+- Optional Roslyn expression support via extension (`RegisterRoslynExpressions`)
 - Utility entry point API (`Ini.Serialize`, `Ini.Deserialize`)
 
 ---
@@ -218,6 +219,60 @@ This enables syntax like:
 ```ini
 Distances=[1.2 m,3.4 km]
 ```
+
+---
+
+## Example: runtime expressions (Roslyn, opt-in)
+
+You can store expressions in INI and execute them at runtime after deserialization.
+
+INI example:
+
+```ini
+[ExpressionSettings]
+ExpressionY=x * x + 2
+ExpressionZ=x * y + z
+```
+
+Model:
+
+```csharp
+using Ini.Serializer.Expressions;
+
+public sealed class ExpressionSettings
+{
+	public IniExpression? ExpressionY { get; set; }
+	public IniExpression? ExpressionZ { get; set; }
+}
+```
+
+Usage:
+
+```csharp
+using Ini.Serializer;
+using Ini.Serializer.Extensions;
+
+string iniText = """
+[ExpressionSettings]
+ExpressionY=x * x + 2
+ExpressionZ=x * y + z
+""";
+
+ExpressionSettings settings = Ini.Deserialize<ExpressionSettings>(
+	iniText,
+	s => s.RegisterRoslynExpressions());
+
+double y = settings.ExpressionY!.Execute(("x", 5));             // 27
+double z = settings.ExpressionZ!.Execute(("x", 2), ("y", 4), ("z", 3)); // 11
+```
+
+### Why this is useful
+
+- Keep INI human-readable while allowing dynamic formulas.
+- Define calculation rules in config without recompiling the app.
+- Supports flexible parameter counts (1..n variables).
+
+> Expression execution is intentionally opt-in via extension registration.
 
 ---
 
