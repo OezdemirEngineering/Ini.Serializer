@@ -4,12 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Ini.Serializer</PackageId>
+    <PackageId>Oeeng.Ini.Serializer</PackageId>
     <Version>1.0.0</Version>
     <Authors>OezdemirEngineering</Authors>
     <Company>OezdemirEngineering</Company>
-    <Description>INI serializer with extensible converter pipeline, collection conversion, and optional Roslyn expression execution.</Description>
-    <PackageTags>ini;serializer;configuration;converter;roslyn</PackageTags>
+    <Description>INI serializer with extensible converter pipeline, collection conversion, and optional expression execution.</Description>
+    <PackageTags>ini;serializer;configuration;converter</PackageTags>
     <RepositoryUrl>https://github.com/OezdemirEngineering/Ini.Serializer</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/OezdemirEngineering/Ini.Serializer</PackageProjectUrl>
