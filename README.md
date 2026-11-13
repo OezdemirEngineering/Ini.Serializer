@@ -56,22 +56,7 @@ This project is configured for NuGet packaging in `Ini.Serializer.csproj` and in
 - symbols package (`.snupkg`)
 - README inside package (`PackageReadmeFile`)
 
-### Local pack
 
-```bash
-dotnet pack Ini.Serializer/Ini.Serializer.csproj -c Release -o ./artifacts
-```
-
-### GitHub publish workflow
-
-Workflow: `.github/workflows/nuget-publish.yml`
-
-- runs on tag push (`v*`) or manual dispatch
-- packs and pushes `.nupkg` + `.snupkg` to NuGet.org
-
-Publishing uses GitHub Actions OIDC. Configure a trusted publisher for this repository on NuGet.org and set the GitHub Actions repository variable `NUGET_USER` to the NuGet username associated with that trusted publisher. No `NUGET_API_KEY` repository secret is required.
-
----
 
 ## Quick start
 
