@@ -47,7 +47,7 @@ jobs:
         id: nuget-login
         uses: NuGet/login@v1
         with:
-          user: ${{ vars.NUGET_USER }}
+          user: OEENG
 
       - name: Publish NuGet package
         env:
