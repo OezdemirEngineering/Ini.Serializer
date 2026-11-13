@@ -6,9 +6,6 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: read
-
 jobs:
   publish:
     runs-on: ubuntu-24.04
@@ -31,24 +28,26 @@ jobs:
         run: dotnet restore Ini.Serializer/Ini.Serializer.csproj
 
       - name: Build
-        run: >
-          dotnet build Ini.Serializer/Ini.Serializer.csproj
-          --configuration Release
-          --no-restore
+        run: |
+          dotnet build Ini.Serializer/Ini.Serializer.csproj \
+            --configuration Release \
+            --no-restore
 
       - name: Pack
-        run: >
-          dotnet pack Ini.Serializer/Ini.Serializer.csproj
-          --configuration Release
-          --no-build
-          --output ./artifacts
+        run: |
+          dotnet pack Ini.Serializer/Ini.Serializer.csproj \
+            --configuration Release \
+            --no-build \
+            --output ./artifacts
 
+      # Authenticate using GitHub OIDC
       - name: Authenticate to NuGet.org
         id: nuget-login
         uses: NuGet/login@v1
         with:
-          user: ${{ vars.NUGET_USER }}
+          user: OEENG
 
+      # Publish package
       - name: Publish NuGet package
         env:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
@@ -58,6 +57,7 @@ jobs:
             --api-key "$NUGET_API_KEY" \
             --skip-duplicate
 
+      # Publish symbols if available
       - name: Publish symbols
         env:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
