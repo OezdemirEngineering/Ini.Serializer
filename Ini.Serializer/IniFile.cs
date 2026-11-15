@@ -1,8 +1,8 @@
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Services;
 
-namespace Ini.Serializer;
+namespace Oeeng.Ini.Serializer;
 
-public static class Ini
+public static class IniFile
 {
     public static string Serialize(object dataModel, Action<IniSerializer>? configure = null)
     {

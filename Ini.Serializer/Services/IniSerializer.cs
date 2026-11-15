@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Globalization;
 using System.Reflection;
-using Ini.Serializer.Contracts;
-using Ini.Serializer.Extensions;
+using Oeeng.Ini.Serializer.Contracts;
+using Oeeng.Ini.Serializer.Extensions;
 
-namespace Ini.Serializer.Services;
+namespace Oeeng.Ini.Serializer.Services;
 
 public class IniSerializer
 {

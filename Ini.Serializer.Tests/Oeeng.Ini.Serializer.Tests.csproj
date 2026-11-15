@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ini.Serializer\Ini.Serializer.csproj" />
+    <ProjectReference Include="..\Ini.Serializer\Oeeng.Ini.Serializer.csproj" />
   </ItemGroup>
 
 </Project>

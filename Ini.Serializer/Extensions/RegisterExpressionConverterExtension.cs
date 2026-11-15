@@ -1,7 +1,7 @@
-using Ini.Serializer.Converters;
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Converters;
+using Oeeng.Ini.Serializer.Services;
 
-namespace Ini.Serializer.Extensions;
+namespace Oeeng.Ini.Serializer.Extensions;
 
 public static class RegisterExpressionConverterExtension
 {

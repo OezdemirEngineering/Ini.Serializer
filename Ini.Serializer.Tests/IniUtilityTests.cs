@@ -1,10 +1,10 @@
 using System.Globalization;
 using Shouldly;
-using Ini.Serializer.Contracts;
-using Ini.Serializer.Extensions;
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Contracts;
+using Oeeng.Ini.Serializer.Extensions;
+using Oeeng.Ini.Serializer.Services;
 
-namespace Ini.Serializer.Tests;
+namespace Oeeng.Ini.Serializer.Tests;
 
 public class IniUtilityTests
 {
@@ -16,7 +16,7 @@ public class IniUtilityTests
             Distance = new Measurement(12.5m, "m")
         };
 
-        string iniText = Ini.Serialize(model, serializer =>
+        string iniText = IniFile.Serialize(model, serializer =>
             serializer.RegisterConverter(new MeasurementConverter()));
 
         iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ShouldContain("Distance=12.5 m");
@@ -27,7 +27,7 @@ public class IniUtilityTests
     {
         string iniText = "[ConverterSettings]\nDistance=99.9 km\n";
 
-        var model = Ini.Deserialize<ConverterSettings>(iniText, serializer =>
+        var model = IniFile.Deserialize<ConverterSettings>(iniText, serializer =>
             serializer.RegisterConverter(new MeasurementConverter()));
 
         model.Distance.Value.ShouldBe(99.9m);
@@ -40,7 +40,7 @@ public class IniUtilityTests
         string iniText = "[ConverterSettings]\nDistance=77.7 mm\n";
         var model = new ConverterSettings();
 
-        object result = Ini.Deserialize(iniText, model, serializer =>
+        object result = IniFile.Deserialize(iniText, model, serializer =>
             serializer.RegisterConverter(new MeasurementConverter()));
 
         result.ShouldBeSameAs(model);

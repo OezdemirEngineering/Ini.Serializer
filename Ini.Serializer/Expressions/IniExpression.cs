@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System.Text.RegularExpressions;
 
-namespace Ini.Serializer.Expressions;
+namespace Oeeng.Ini.Serializer.Expressions;
 
 public sealed class IniExpression
 {

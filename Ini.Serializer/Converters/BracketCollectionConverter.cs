@@ -1,8 +1,8 @@
-using Ini.Serializer.Contracts;
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Contracts;
+using Oeeng.Ini.Serializer.Services;
 using System.Collections;
 
-namespace Ini.Serializer.Converters;
+namespace Oeeng.Ini.Serializer.Converters;
 
 public sealed class BracketCollectionConverter : IIniValueConverter
 {

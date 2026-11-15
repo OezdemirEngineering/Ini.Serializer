@@ -1,13 +1,13 @@
 ﻿using System.Globalization;
 using Shouldly;
 
-using Ini.Serializer.Converters;
-using Ini.Serializer.Extensions;
-using Ini.Serializer.Contracts;
-using Ini.Serializer.Expressions;
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Converters;
+using Oeeng.Ini.Serializer.Extensions;
+using Oeeng.Ini.Serializer.Contracts;
+using Oeeng.Ini.Serializer.Expressions;
+using Oeeng.Ini.Serializer.Services;
 
-namespace Ini.Serializer.Tests;
+namespace Oeeng.Ini.Serializer.Tests;
 
 public class SerializerTests
 {
@@ -335,7 +335,7 @@ public class SerializerTests
             return type == typeof(Measurement);
         }
 
-        public string Serialize(object? value, Type declaredType, global::Ini.Serializer.Services.IniSerializer serializer)
+        public string Serialize(object? value, Type declaredType, IniSerializer serializer)
         {
             if (value is null)
             {
@@ -346,7 +346,7 @@ public class SerializerTests
             return $"{measurement.Value.ToString(CultureInfo.InvariantCulture)} {measurement.Unit}";
         }
 
-        public object? Deserialize(string rawValue, Type targetType, global::Ini.Serializer.Services.IniSerializer serializer)
+        public object? Deserialize(string rawValue, Type targetType, IniSerializer serializer)
         {
             int separatorIndex = rawValue.IndexOf(' ');
             string valuePart = separatorIndex >= 0 ? rawValue[..separatorIndex] : rawValue;
@@ -363,7 +363,7 @@ public class SerializerTests
             return type == typeof(ChildSettings);
         }
 
-        public string Serialize(object? value, Type declaredType, global::Ini.Serializer.Services.IniSerializer serializer)
+        public string Serialize(object? value, Type declaredType, IniSerializer serializer)
         {
             if (value is not ChildSettings child)
             {
@@ -373,7 +373,7 @@ public class SerializerTests
             return $"{child.Flag} {string.Join(':', child.Codes)}";
         }
 
-        public object? Deserialize(string rawValue, Type targetType, global::Ini.Serializer.Services.IniSerializer serializer)
+        public object? Deserialize(string rawValue, Type targetType, IniSerializer serializer)
         {
             int separatorIndex = rawValue.IndexOf(' ');
             string flagPart = separatorIndex >= 0 ? rawValue[..separatorIndex] : rawValue;

@@ -1,7 +1,7 @@
-﻿using Ini.Serializer.Contracts;
-using Ini.Serializer.Services;
+﻿using Oeeng.Ini.Serializer.Contracts;
+using Oeeng.Ini.Serializer.Services;
 
-namespace Ini.Serializer.Extensions;
+namespace Oeeng.Ini.Serializer.Extensions;
 
 public static class RegisterConverterExtension
 {
@@ -16,19 +16,19 @@ public static class RegisterConverterExtension
     }
 
     internal static bool TryGetConverter(
-        this IniSerializer iniSerializer, 
-        Type targetType, 
+        this IniSerializer iniSerializer,
+        Type targetType,
         out IIniValueConverter? converter)
     {
 
         var localizedConvertes = iniSerializer.CustomConverters.FindAll(c => c.CanConvert(targetType));
 
-        if(localizedConvertes.Count > 1)
+        if (localizedConvertes.Count > 1)
         {
             throw new InvalidOperationException($"Multiple converters found for type '{targetType.FullName}'.");
         }
 
-        if(localizedConvertes.Count == 1)
+        if (localizedConvertes.Count == 1)
         {
             converter = localizedConvertes[0];
             return true;

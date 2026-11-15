@@ -1,6 +1,6 @@
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Services;
 
-namespace Ini.Serializer.Contracts;
+namespace Oeeng.Ini.Serializer.Contracts;
 
 public interface IIniValueConverter
 {
