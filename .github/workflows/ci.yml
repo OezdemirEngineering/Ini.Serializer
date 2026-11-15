@@ -49,10 +49,10 @@ jobs:
             10.0.x
 
       - name: Restore
-        run: dotnet restore Oeeng.Ini.Serializer.Tests/Ini.Serializer.Tests.csproj
+        run: dotnet restore Oeeng.Ini.Serializer.Tests/Oeeng.Ini.Serializer.Tests.csproj
 
       - name: Build
-        run: dotnet build Oeeng.Ini.Serializer.Tests/Ini.Serializer.Tests.csproj --configuration Release --no-restore
+        run: dotnet build Oeeng.Ini.Serializer.Tests/Oeeng.Ini.Serializer.Tests.csproj --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test Oeeng.Ini.Serializer.Tests/Ini.Serializer.Tests.csproj --configuration Release --no-build --verbosity normal
+        run: dotnet test Oeeng.Ini.Serializer.Tests/Oeeng.Ini.Serializer.Tests.csproj --configuration Release --no-build --verbosity normal
