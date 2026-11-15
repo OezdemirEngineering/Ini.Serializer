@@ -5,6 +5,12 @@ namespace Oeeng.Ini.Serializer.Extensions;
 
 public static class RegisterConverterExtension
 {
+    /// <summary>
+    /// Registers a value converter used during serialization and deserialization.
+    /// </summary>
+    /// <param name="iniSerializer">The serializer instance to configure.</param>
+    /// <param name="converter">The converter implementation to register.</param>
+    /// <returns>The same <paramref name="iniSerializer"/> instance for fluent chaining.</returns>
     public static IniSerializer RegisterConverter(this IniSerializer iniSerializer, IIniValueConverter converter)
     {
         ArgumentNullException.ThrowIfNull(iniSerializer);

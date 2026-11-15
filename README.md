@@ -37,8 +37,8 @@ This allows you to keep INI but still get flexible serialization behavior simila
 - Nested model sections via dot path (`[Parent.Child]`)
 - Full converter extensibility (`IIniValueConverter`)
 - Optional collection support via converter (`BracketCollectionConverter`)
-- Optional Roslyn expression support via extension (`RegisterRoslynExpressions`)
-- Utility entry point API (`Ini.Serialize`, `Ini.Deserialize`)
+- Optional Roslyn expression support via extension (`RegisterExpressions`)
+- Utility entry point API (`IniFile.Serialize`, `IniFile.Deserialize`)
 
 ---
 
@@ -56,12 +56,18 @@ This project is configured for NuGet packaging in `Ini.Serializer.csproj` and in
 - symbols package (`.snupkg`)
 - README inside package (`PackageReadmeFile`)
 
+Local package build:
 
+```bash
+dotnet pack Ini.Serializer/Ini.Serializer.csproj -c Release -o ./artifacts
+```
+
+---
 
 ## Quick start
 
 ```csharp
-using Ini.Serializer;
+using Oeeng.Ini.Serializer;
 
 var model = new AppSettings
 {
@@ -69,9 +75,9 @@ var model = new AppSettings
 	Port = 8080
 };
 
-string iniText = Ini.Serialize(model);
+string iniText = IniFile.Serialize(model);
 
-var deserialized = Ini.Deserialize<AppSettings>(iniText);
+var deserialized = IniFile.Deserialize<AppSettings>(iniText);
 ```
 
 ```csharp
@@ -97,15 +103,15 @@ Port=8080
 ### Utility API (recommended entry)
 
 ```csharp
-string ini = Ini.Serialize(object dataModel, Action<IniSerializer>? configure = null);
-T model = Ini.Deserialize<T>(string iniText, Action<IniSerializer>? configure = null) where T : new();
-object model = Ini.Deserialize(string iniText, object dataModel, Action<IniSerializer>? configure = null);
+string ini = IniFile.Serialize(object dataModel, Action<IniSerializer>? configure = null);
+T model = IniFile.Deserialize<T>(string iniText, Action<IniSerializer>? configure = null) where T : new();
+object model = IniFile.Deserialize(string iniText, object dataModel, Action<IniSerializer>? configure = null);
 ```
 
 ### Service API
 
 ```csharp
-var serializer = new Ini.Serializer.Services.IniSerializer();
+var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer();
 string ini = serializer.Serialize(model);
 serializer.Deserialize(ini, model);
 ```
@@ -156,9 +162,9 @@ public interface IIniValueConverter
 ### Registration
 
 ```csharp
-using Ini.Serializer.Extensions;
+using Oeeng.Ini.Serializer.Extensions;
 
-var serializer = new Ini.Serializer.Services.IniSerializer()
+var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer()
 	.RegisterConverter(new MyCustomConverter());
 ```
 
@@ -169,8 +175,8 @@ var serializer = new Ini.Serializer.Services.IniSerializer()
 ## Example: custom value converter (Units-like type)
 
 ```csharp
-using Ini.Serializer.Contracts;
-using Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Contracts;
+using Oeeng.Ini.Serializer.Services;
 using System.Globalization;
 
 public readonly record struct Measurement(decimal Value, string Unit);
@@ -205,7 +211,7 @@ Use it:
 ```csharp
 var config = new DeviceConfig { Distance = new Measurement(12.5m, "m") };
 
-string ini = Ini.Serialize(config, s => s.RegisterConverter(new MeasurementConverter()));
+string ini = IniFile.Serialize(config, s => s.RegisterConverter(new MeasurementConverter()));
 ```
 
 ---
@@ -215,9 +221,9 @@ string ini = Ini.Serialize(config, s => s.RegisterConverter(new MeasurementConve
 Collections are not hardcoded in the serializer. Add support by registering `BracketCollectionConverter`:
 
 ```csharp
-using Ini.Serializer.Converters;
+using Oeeng.Ini.Serializer.Converters;
 
-string ini = Ini.Serialize(model, s =>
+string ini = IniFile.Serialize(model, s =>
 {
 	s.RegisterConverter(new BracketCollectionConverter());
 	s.RegisterConverter(new MeasurementConverter());
@@ -247,7 +253,7 @@ ExpressionZ=x * y + z
 Model:
 
 ```csharp
-using Ini.Serializer.Expressions;
+using Oeeng.Ini.Serializer.Expressions;
 
 public sealed class ExpressionSettings
 {
@@ -259,8 +265,8 @@ public sealed class ExpressionSettings
 Usage:
 
 ```csharp
-using Ini.Serializer;
-using Ini.Serializer.Extensions;
+using Oeeng.Ini.Serializer;
+using Oeeng.Ini.Serializer.Extensions;
 
 string iniText = """
 [ExpressionSettings]
@@ -268,9 +274,9 @@ ExpressionY=x * x + 2
 ExpressionZ=x * y + z
 """;
 
-ExpressionSettings settings = Ini.Deserialize<ExpressionSettings>(
+ExpressionSettings settings = IniFile.Deserialize<ExpressionSettings>(
 	iniText,
-	s => s.RegisterRoslynExpressions());
+	s => s.RegisterExpressions());
 
 double y = settings.ExpressionY!.Execute(("x", 5));             // 27
 double z = settings.ExpressionZ!.Execute(("x", 2), ("y", 4), ("z", 3)); // 11

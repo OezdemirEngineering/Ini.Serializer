@@ -10,6 +10,11 @@ public class IniSerializer
 {
     internal List<IIniValueConverter> CustomConverters { get; } = [];
 
+    /// <summary>
+    /// Serializes the provided data model into INI text.
+    /// </summary>
+    /// <param name="dataModel">The model instance to serialize.</param>
+    /// <returns>The serialized INI text.</returns>
     public string Serialize(object dataModel)
     {
         ArgumentNullException.ThrowIfNull(dataModel);
@@ -19,6 +24,12 @@ public class IniSerializer
         return serializedStr;
     }
 
+    /// <summary>
+    /// Deserializes INI text into the provided model instance.
+    /// </summary>
+    /// <param name="iniText">The INI text to deserialize.</param>
+    /// <param name="dataModel">The model instance to populate.</param>
+    /// <returns>The same <paramref name="dataModel"/> instance after deserialization.</returns>
     public object Deserialize(string iniText, object dataModel)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(iniText);

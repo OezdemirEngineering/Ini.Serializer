@@ -4,6 +4,9 @@ using System.Text.RegularExpressions;
 
 namespace Oeeng.Ini.Serializer.Expressions;
 
+/// <summary>
+/// Represents a runtime-evaluable arithmetic expression loaded from INI text.
+/// </summary>
 public sealed class IniExpression
 {
     private static readonly Regex IdentifierPattern = new(@"\b[A-Za-z_]\w*\b", RegexOptions.Compiled);
@@ -17,14 +20,26 @@ public sealed class IniExpression
         .AddImports("System")
         .AddReferences(typeof(Math).Assembly);
 
+    /// <summary>
+    /// Initializes a new expression instance from expression text.
+    /// </summary>
+    /// <param name="expression">The expression text (for example: <c>x * x + 2</c>).</param>
     public IniExpression(string expression)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(expression);
         Expression = expression.Trim();
     }
 
+    /// <summary>
+    /// Gets the original expression text.
+    /// </summary>
     public string Expression { get; }
 
+    /// <summary>
+    /// Executes the expression with the provided variable map.
+    /// </summary>
+    /// <param name="variables">Variables used by the expression, keyed by variable name.</param>
+    /// <returns>The evaluated numeric result.</returns>
     public double Execute(IDictionary<string, double> variables)
     {
         ArgumentNullException.ThrowIfNull(variables);
@@ -38,6 +53,11 @@ public sealed class IniExpression
             globals).GetAwaiter().GetResult();
     }
 
+    /// <summary>
+    /// Executes the expression with positional parameter tuples.
+    /// </summary>
+    /// <param name="parameters">Name/value tuples mapped to expression variables.</param>
+    /// <returns>The evaluated numeric result.</returns>
     public double Execute(params (string Name, double Value)[] parameters)
     {
         ArgumentNullException.ThrowIfNull(parameters);

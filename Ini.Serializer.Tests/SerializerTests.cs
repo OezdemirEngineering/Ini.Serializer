@@ -1,10 +1,10 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Shouldly;
 
 using Oeeng.Ini.Serializer.Converters;
-using Oeeng.Ini.Serializer.Extensions;
 using Oeeng.Ini.Serializer.Contracts;
 using Oeeng.Ini.Serializer.Expressions;
+using Oeeng.Ini.Serializer.Extensions;
 using Oeeng.Ini.Serializer.Services;
 
 namespace Oeeng.Ini.Serializer.Tests;
@@ -14,6 +14,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_ReturnsSectionAndKeysFromModelProperties()
     {
+        // Arrange
         var serializer = new IniSerializer();
         var model = new TestSettings
         {
@@ -22,8 +23,10 @@ public class SerializerTests
             IsEnabled = true
         };
 
+        // Act
         string iniText = serializer.Serialize(model);
 
+        // Assert
         string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         lines[0].ShouldBe("[TestSettings]");
         lines.ShouldContain("Name=Max");
@@ -34,13 +37,15 @@ public class SerializerTests
     [Fact]
     public void Deserialize_SetsModelPropertiesFromIniText()
     {
+        // Arrange
         var serializer = new IniSerializer();
         string iniText = "[TestSettings]\nName=Anna\nAge=44\nIsEnabled=False\n";
-
         var model = new TestSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Name.ShouldBe("Anna");
         model.Age.ShouldBe(44);
         model.IsEnabled.ShouldBeFalse();
@@ -49,6 +54,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_FormatsCollectionsAsBracketedList()
     {
+        // Arrange
         var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         var model = new CollectionSettings
         {
@@ -56,8 +62,10 @@ public class SerializerTests
             Numbers = [1, 2, 3]
         };
 
+        // Act
         string iniText = serializer.Serialize(model);
 
+        // Assert
         string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         lines.ShouldContain("Tags=[a1,a2,a3]");
         lines.ShouldContain("Numbers=[1,2,3]");
@@ -66,13 +74,15 @@ public class SerializerTests
     [Fact]
     public void Deserialize_ParsesCollectionsFromBracketedList()
     {
+        // Arrange
         var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         string iniText = "[CollectionSettings]\nTags=[x1,x2,x3]\nNumbers=[7,8,9]\n";
-
         var model = new CollectionSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Tags.ShouldBe(["x1", "x2", "x3"]);
         model.Numbers.ShouldBe([7, 8, 9]);
     }
@@ -80,6 +90,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesNestedSectionsForNestedModels()
     {
+        // Arrange
         var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         var model = new ParentSettings
         {
@@ -91,9 +102,11 @@ public class SerializerTests
             }
         };
 
+        // Act
         string iniText = serializer.Serialize(model);
-        string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
+        // Assert
+        string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         lines.ShouldContain("[ParentSettings]");
         lines.ShouldContain("Name=Root");
         lines.ShouldContain("[ParentSettings.ChildSettings]");
@@ -104,13 +117,15 @@ public class SerializerTests
     [Fact]
     public void Deserialize_ReadsNestedSectionIntoNestedModel()
     {
+        // Arrange
         var serializer = new IniSerializer().RegisterConverter(new BracketCollectionConverter());
         string iniText = "[ParentSettings]\nName=Configured\n[ParentSettings.ChildSettings]\nFlag=False\nCodes=[1,2,3]\n";
-
         var model = new ParentSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Name.ShouldBe("Configured");
         model.Child.ShouldNotBeNull();
         model.Child.Flag.ShouldBeFalse();
@@ -120,6 +135,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesRegisteredConvertersForCollectionOfClassElements()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new ChildSettingsConverter());
@@ -134,9 +150,11 @@ public class SerializerTests
             ]
         };
 
+        // Act
         string iniText = serializer.Serialize(model);
-        string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
+        // Assert
+        string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         lines.ShouldContain("[ParentWithChildrenSettings]");
         lines.ShouldContain("Children=[True 10,False 20:30]");
     }
@@ -144,15 +162,17 @@ public class SerializerTests
     [Fact]
     public void Deserialize_UsesRegisteredConvertersForCollectionOfClassElements()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new ChildSettingsConverter());
         string iniText = "[ParentWithChildrenSettings]\nName=Root\nChildren=[True 10,False 20:30]\n";
-
         var model = new ParentWithChildrenSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Name.ShouldBe("Root");
         model.Children.Count.ShouldBe(2);
         model.Children[0].Flag.ShouldBeTrue();
@@ -164,6 +184,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesCustomConverterForUnsupportedType()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new MeasurementConverter());
 
@@ -172,22 +193,27 @@ public class SerializerTests
             Distance = new Measurement(12.5m, "m")
         };
 
+        // Act
         string iniText = serializer.Serialize(model);
 
+        // Assert
         iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ShouldContain("Distance=12.5 m");
     }
 
     [Fact]
     public void Deserialize_UsesCustomConverterForUnsupportedType()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new MeasurementConverter());
 
         string iniText = "[ConverterSettings]\nDistance=99.9 km\n";
         var model = new ConverterSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Distance.Value.ShouldBe(99.9m);
         model.Distance.Unit.ShouldBe("km");
     }
@@ -195,6 +221,7 @@ public class SerializerTests
     [Fact]
     public void Serialize_UsesCustomConverterForCollectionElements()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new MeasurementConverter());
@@ -204,14 +231,17 @@ public class SerializerTests
             Distances = [new Measurement(1.2m, "m"), new Measurement(3.4m, "km")]
         };
 
+        // Act
         string iniText = serializer.Serialize(model);
 
+        // Assert
         iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ShouldContain("Distances=[1.2 m,3.4 km]");
     }
 
     [Fact]
     public void Deserialize_UsesCustomConverterForCollectionElements()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new BracketCollectionConverter())
             .RegisterConverter(new MeasurementConverter());
@@ -219,8 +249,10 @@ public class SerializerTests
         string iniText = "[ConverterCollectionSettings]\nDistances=[5.6 m,7.8 km]\n";
         var model = new ConverterCollectionSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Distances.Count.ShouldBe(2);
         model.Distances[0].Value.ShouldBe(5.6m);
         model.Distances[0].Unit.ShouldBe("m");
@@ -231,14 +263,17 @@ public class SerializerTests
     [Fact]
     public void Deserialize_UsesCustomConverterForNullableType()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterConverter(new MeasurementConverter());
 
         string iniText = "[NullableConverterSettings]\nDistance=42 cm\n";
         var model = new NullableConverterSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.Distance.HasValue.ShouldBeTrue();
         model.Distance.Value.Value.ShouldBe(42m);
         model.Distance.Value.Unit.ShouldBe("cm");
@@ -247,14 +282,17 @@ public class SerializerTests
     [Fact]
     public void Deserialize_StoresRoslynExpression_WithSingleParameter()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterExpressions();
 
         string iniText = "[ExpressionSettings]\nExpressionY=x * x + 2\n";
         var model = new ExpressionSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.ExpressionY.ShouldNotBeNull();
         model.ExpressionY!.Execute(("x", 5)).ShouldBe(27d);
     }
@@ -262,14 +300,17 @@ public class SerializerTests
     [Fact]
     public void Deserialize_StoresRoslynExpression_WithMultipleParameters()
     {
+        // Arrange
         var serializer = new IniSerializer()
             .RegisterExpressions();
 
         string iniText = "[ExpressionSettings]\nExpressionY=x * y + z\n";
         var model = new ExpressionSettings();
 
+        // Act
         serializer.Deserialize(iniText, model);
 
+        // Assert
         model.ExpressionY.ShouldNotBeNull();
         model.ExpressionY!.Execute(("x", 2), ("y", 4), ("z", 3)).ShouldBe(11d);
     }

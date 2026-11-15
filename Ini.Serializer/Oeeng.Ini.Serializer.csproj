@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<PackageId>Oeeng.Ini.Serializer</PackageId>
 		<PackageIcon>logo.png</PackageIcon>
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 		<Authors>OezdemirEngineering</Authors>
 		<Company>OezdemirEngineering</Company>
 		<Description>INI serializer with extensible converter pipeline, collection conversion, and optional expression execution.</Description>

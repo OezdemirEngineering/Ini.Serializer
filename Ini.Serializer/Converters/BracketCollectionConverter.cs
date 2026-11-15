@@ -4,14 +4,29 @@ using System.Collections;
 
 namespace Oeeng.Ini.Serializer.Converters;
 
+/// <summary>
+/// Converts enumerable values to and from bracket notation (for example: <c>[a,b,c]</c>).
+/// </summary>
 public sealed class BracketCollectionConverter : IIniValueConverter
 {
+    /// <summary>
+    /// Determines whether the provided type is a supported enumerable type.
+    /// </summary>
+    /// <param name="targetType">The type to evaluate.</param>
+    /// <returns><see langword="true"/> when the type is an enumerable (except <see cref="string"/>).</returns>
     public bool CanConvert(Type targetType)
     {
         Type type = Nullable.GetUnderlyingType(targetType) ?? targetType;
         return type != typeof(string) && typeof(IEnumerable).IsAssignableFrom(type);
     }
 
+    /// <summary>
+    /// Serializes an enumerable value into bracket notation.
+    /// </summary>
+    /// <param name="value">The enumerable value to serialize.</param>
+    /// <param name="declaredType">The declared type of the value.</param>
+    /// <param name="serializer">The active serializer instance.</param>
+    /// <returns>The serialized bracket notation string.</returns>
     public string Serialize(object? value, Type declaredType, IniSerializer serializer)
     {
         if (value is not IEnumerable values)
@@ -30,6 +45,13 @@ public sealed class BracketCollectionConverter : IIniValueConverter
         return $"[{string.Join(',', itemValues)}]";
     }
 
+    /// <summary>
+    /// Deserializes bracket notation into the target enumerable type.
+    /// </summary>
+    /// <param name="rawValue">The raw INI value in bracket notation.</param>
+    /// <param name="targetType">The requested target enumerable type.</param>
+    /// <param name="serializer">The active serializer instance.</param>
+    /// <returns>The deserialized enumerable object.</returns>
     public object Deserialize(string rawValue, Type targetType, IniSerializer serializer)
     {
         Type collectionType = Nullable.GetUnderlyingType(targetType) ?? targetType;
