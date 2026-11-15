@@ -25,17 +25,17 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore Oeeng.Ini.Serializer/Ini.Serializer.csproj
+        run: dotnet restore Oeeng.Ini.Serializer/Oeeng.Ini.Serializer.csproj
 
       - name: Build
         run: |
-          dotnet build Oeeng.Ini.Serializer/Ini.Serializer.csproj \
+          dotnet build Oeeng.Ini.Serializer/Oeeng.Ini.Serializer.csproj \
             --configuration Release \
             --no-restore
 
       - name: Pack
         run: |
-          dotnet pack Oeeng.Ini.Serializer/Ini.Serializer.csproj \
+          dotnet pack Oeeng.Ini.Serializer/Oeeng.Ini.Serializer.csproj \
             --configuration Release \
             --no-build \
             --output ./artifacts
