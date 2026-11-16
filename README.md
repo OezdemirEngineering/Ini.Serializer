@@ -39,6 +39,7 @@ This allows you to keep INI but still get flexible serialization behavior simila
 - Optional collection support via converter (`BracketCollectionConverter`)
 - Optional Roslyn expression support via extension (`RegisterExpressions`)
 - Utility entry point API (`IniFile.Serialize`, `IniFile.Deserialize`)
+- Comment-aware round-trip after `Deserialize` (preserves full-line and inline comments)
 
 ---
 
@@ -115,6 +116,38 @@ var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer();
 string ini = serializer.Serialize(model);
 serializer.Deserialize(ini, model);
 ```
+
+### Comment round-trip behavior
+
+After `Deserialize`, the serializer remembers comment positions from the source INI.
+On the next `Serialize` with the same model type, comments are applied back:
+
+- full-line comments are inserted at their mapped line positions
+- inline comments are appended to the corresponding `section|key` line
+
+If you serialize a different model type, the comment map is discarded.
+After applying comments once, the map is cleared.
+
+Example:
+
+```csharp
+var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer();
+
+string ini = """
+[AppSettings]
+; global comment
+Name=Demo ; keep this note
+Port=8080
+""";
+
+var model = new AppSettings();
+serializer.Deserialize(ini, model);
+model.Port = 9090;
+
+string updated = serializer.Serialize(model);
+```
+
+Result keeps comments and updates values.
 
 ---
 
