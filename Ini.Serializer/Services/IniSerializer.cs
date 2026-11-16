@@ -9,6 +9,8 @@ namespace Oeeng.Ini.Serializer.Services;
 public class IniSerializer
 {
     internal List<IIniValueConverter> CustomConverters { get; } = [];
+    private Type? mappedCommentModelType;
+    private CommentMap? mappedComments;
 
     /// <summary>
     /// Serializes the provided data model into INI text.
@@ -21,7 +23,21 @@ public class IniSerializer
 
         string serializedStr = string.Empty;
         serializedStr = SerializeSection(dataModel, dataModel.GetType().Name, serializedStr);
-        return serializedStr;
+
+        if (mappedComments is null)
+        {
+            return serializedStr;
+        }
+
+        if (mappedCommentModelType != dataModel.GetType())
+        {
+            ClearCommentMap();
+            return serializedStr;
+        }
+
+        string merged = ApplyComments(serializedStr, mappedComments);
+        ClearCommentMap();
+        return merged;
     }
 
     /// <summary>
@@ -36,6 +52,9 @@ public class IniSerializer
         ArgumentNullException.ThrowIfNull(dataModel);
 
         Type modelType = dataModel.GetType();
+        mappedComments = ParseComments(iniText);
+        mappedCommentModelType = modelType;
+
         var sections = ParseIniSections(iniText);
         DeserializeSection(dataModel, modelType.Name, sections);
         return dataModel;
@@ -209,6 +228,64 @@ public class IniSerializer
         return true;
     }
 
+    private static CommentMap ParseComments(string iniText)
+    {
+        var map = new CommentMap();
+        string[] lines = iniText.Split(["\r\n", "\n"], StringSplitOptions.None);
+        string? currentSection = null;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            string trimmed = line.Trim();
+
+            if (trimmed.Length == 0)
+            {
+                continue;
+            }
+
+            if (trimmed.StartsWith(';') || trimmed.StartsWith('#'))
+            {
+                map.LineComments[i] = line;
+                continue;
+            }
+
+            string cleanLine = StripComments(line).Trim();
+            if (cleanLine.Length == 0)
+            {
+                continue;
+            }
+
+            if (cleanLine.StartsWith('[') && cleanLine.EndsWith(']') && cleanLine.Length > 2)
+            {
+                currentSection = cleanLine[1..^1].Trim();
+                continue;
+            }
+
+            int separatorIndex = cleanLine.IndexOf('=');
+            if (separatorIndex <= 0)
+            {
+                continue;
+            }
+
+            int commentIndex = FindCommentStartIndex(line);
+            if (commentIndex <= separatorIndex)
+            {
+                continue;
+            }
+
+            string key = cleanLine[..separatorIndex].Trim();
+            if (currentSection is null)
+            {
+                continue;
+            }
+
+            map.InlineComments[$"{currentSection}|{key}"] = line[commentIndex..].TrimStart();
+        }
+
+        return map;
+    }
+
     private static Dictionary<string, Dictionary<string, string>> ParseIniSections(string iniText)
     {
         var sections = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
@@ -217,8 +294,8 @@ public class IniSerializer
 
         foreach (string line in lines)
         {
-            string trimmed = line.Trim();
-            if (trimmed.Length == 0 || trimmed.StartsWith(';') || trimmed.StartsWith('#'))
+            string trimmed = StripComments(line).Trim();
+            if (trimmed.Length == 0)
             {
                 continue;
             }
@@ -251,5 +328,93 @@ public class IniSerializer
         }
 
         return sections;
+    }
+
+    private static string ApplyComments(string iniText, CommentMap commentMap)
+    {
+        string lineBreak = iniText.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+        var lines = iniText.Split(["\r\n", "\n"], StringSplitOptions.None).ToList();
+
+        foreach ((int index, string comment) in commentMap.LineComments.OrderBy(c => c.Key))
+        {
+            int insertIndex = Math.Clamp(index, 0, lines.Count);
+            lines.Insert(insertIndex, comment);
+        }
+
+        string? currentSection = null;
+        for (int i = 0; i < lines.Count; i++)
+        {
+            string line = lines[i];
+            string trimmed = line.Trim();
+
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(']') && trimmed.Length > 2)
+            {
+                currentSection = trimmed[1..^1].Trim();
+                continue;
+            }
+
+            if (currentSection is null)
+            {
+                continue;
+            }
+
+            int separatorIndex = line.IndexOf('=');
+            if (separatorIndex <= 0)
+            {
+                continue;
+            }
+
+            string key = line[..separatorIndex].Trim();
+            string mapKey = $"{currentSection}|{key}";
+            if (!commentMap.InlineComments.TryGetValue(mapKey, out string? inlineComment))
+            {
+                continue;
+            }
+
+            string valuePart = line[(separatorIndex + 1)..];
+            if (FindCommentStartIndex(valuePart) >= 0)
+            {
+                continue;
+            }
+
+            lines[i] = string.Concat(line, " ", inlineComment);
+        }
+
+        return string.Join(lineBreak, lines);
+    }
+
+    private void ClearCommentMap()
+    {
+        mappedComments = null;
+        mappedCommentModelType = null;
+    }
+
+    private static string StripComments(string line)
+    {
+        int commentIndex = FindCommentStartIndex(line);
+        return commentIndex >= 0 ? line[..commentIndex] : line;
+    }
+
+    private static int FindCommentStartIndex(string text)
+    {
+        bool escaped = false;
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            char current = text[i];
+
+            if (!escaped && (current == ';' || current == '#'))
+            {
+                return i;
+            }
+
+            escaped = current == '\\' && !escaped;
+            if (current != '\\')
+            {
+                escaped = false;
+            }
+        }
+
+        return -1;
     }
 }

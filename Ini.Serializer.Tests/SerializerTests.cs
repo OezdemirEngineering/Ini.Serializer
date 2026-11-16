@@ -52,6 +52,60 @@ public class SerializerTests
     }
 
     [Fact]
+    public void Serialize_AddsMappedCommentsAfterDeserialize()
+    {
+        // Arrange
+        var serializer = new IniSerializer();
+        string iniText = """
+[TestSettings]
+; remember me
+Name=Anna ; inline comment
+Age=44
+IsEnabled=False
+""";
+        var model = new TestSettings();
+        serializer.Deserialize(iniText, model);
+        model.Age = 45;
+
+        // Act
+        string result = serializer.Serialize(model);
+
+        // Assert
+        result.ShouldContain("; remember me");
+        result.ShouldContain("Name=Anna ; inline comment");
+        result.ShouldContain("Age=45");
+    }
+
+    [Fact]
+    public void Serialize_DropsMappedComments_WhenModelTypeMismatches()
+    {
+        // Arrange
+        var serializer = new IniSerializer();
+        string iniText = """
+[TestSettings]
+; remember me
+Name=Anna
+Age=44
+IsEnabled=False
+""";
+        serializer.Deserialize(iniText, new TestSettings());
+        var otherModel = new CollectionSettings
+        {
+            Tags = ["x1", "x2"],
+            Numbers = [1, 2]
+        };
+
+        // Act
+        string result = serializer
+            .RegisterConverter(new BracketCollectionConverter())
+            .Serialize(otherModel);
+
+        // Assert
+        result.ShouldNotContain("; remember me");
+        result.ShouldContain("[CollectionSettings]");
+    }
+
+    [Fact]
     public void Serialize_FormatsCollectionsAsBracketedList()
     {
         // Arrange
