@@ -335,6 +335,34 @@ IsEnabled=False
     }
 
     [Fact]
+    public void Serialize_UsesTemplateAttribute_ForNestedClasses_OnEachLevel()
+    {
+        // Arrange
+        var serializer = new IniSerializer();
+        var model = new NestedTemplateRootSettings
+        {
+            RootTemplate = "root-value",
+            Level1 = new NestedTemplateLevel1Settings
+            {
+                Level1Template = "level1-value",
+                Level2 = new NestedTemplateLevel2Settings
+                {
+                    Level2Template = "level2-value"
+                }
+            }
+        };
+
+        // Act
+        string iniText = serializer.Serialize(model);
+        string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        // Assert
+        lines.ShouldContain("RootTemplate=%RootTemplate%");
+        lines.ShouldContain("Level1Template=%Level1Template%");
+        lines.ShouldContain("Level2Template=%Level2Template%");
+    }
+
+    [Fact]
     public void Deserialize_UsesTemplateAttribute()
     {
         // Arrange
@@ -373,6 +401,35 @@ IsEnabled=False
         model.TemplatedChild.ShouldNotBeNull();
         model.TemplatedChild.Flag.ShouldBeTrue();
         model.TemplatedChild.Codes.ShouldBe([7, 8]);
+    }
+
+    [Fact]
+    public void Deserialize_UsesTemplateAttribute_ForNestedClasses_OnEachLevel()
+    {
+        // Arrange
+        string iniText = """
+[NestedTemplateRootSettings]
+RootTemplate=%RootToken%
+[NestedTemplateRootSettings.NestedTemplateLevel1Settings]
+Level1Template=%Level1Token%
+[NestedTemplateRootSettings.NestedTemplateLevel1Settings.NestedTemplateLevel2Settings]
+Level2Template=%Level2Token%
+""";
+        var serializer = new IniSerializer();
+        var model = new NestedTemplateRootSettings();
+
+        // Act
+        serializer.Deserialize(iniText, model, new Dictionary<string, object>
+        {
+            ["RootToken"] = "root-value",
+            ["Level1Token"] = "level1-value",
+            ["Level2Token"] = "level2-value"
+        });
+
+        // Assert
+        model.RootTemplate.ShouldBe("root-value");
+        model.Level1.Level1Template.ShouldBe("level1-value");
+        model.Level1.Level2.Level2Template.ShouldBe("level2-value");
     }
 
     [Fact]
