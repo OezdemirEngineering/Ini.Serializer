@@ -39,7 +39,7 @@ This allows you to keep INI but still get flexible serialization behavior simila
 - Full converter extensibility (`IIniValueConverter`)
 - Optional collection support via converter (`BracketCollectionConverter`)
 - Optional Roslyn expression support via extension (`RegisterExpressions`)
-- Utility entry point API (`IniFile.Serialize`, `IniFile.Deserialize`)
+- Utility entry point API via `IniFile.Instance`
 - Template placeholders via `[Template]` for simple and nested properties
 - Comment-aware round-trip after `Deserialize` (preserves full-line and inline comments)
 
@@ -78,9 +78,12 @@ var model = new AppSettings
 	Port = 8080
 };
 
-string iniText = IniFile.Serialize(model);
+var serializer = IniFile.Instance.RegisterConverter(new BracketCollectionConverter());
 
-var deserialized = IniFile.Deserialize<AppSettings>(iniText);
+string iniText = serializer.Serialize(model);
+
+var deserialized = new AppSettings();
+serializer.Deserialize(iniText, deserialized);
 ```
 
 ```csharp
@@ -106,9 +109,10 @@ Port=8080
 ### Utility API (recommended entry)
 
 ```csharp
-string ini = IniFile.Serialize(object dataModel, Action<IniSerializer>? configure = null);
-T model = IniFile.Deserialize<T>(string iniText, Action<IniSerializer>? configure = null) where T : new();
-object model = IniFile.Deserialize(string iniText, object dataModel, Action<IniSerializer>? configure = null);
+IniSerializer serializer = IniFile.Instance;
+serializer.RegisterConverter(IIniValueConverter converter);
+string ini = serializer.Serialize(object dataModel);
+object model = serializer.Deserialize(string iniText, object dataModel, Dictionary<string, object>? replaceMappingList = null);
 ```
 
 ### Service API
@@ -246,7 +250,9 @@ Use it:
 ```csharp
 var config = new DeviceConfig { Distance = new Measurement(12.5m, "m") };
 
-string ini = IniFile.Serialize(config, s => s.RegisterConverter(new MeasurementConverter()));
+string ini = IniFile
+	.RegisterConverter(new MeasurementConverter())
+	.Serialize(config);
 ```
 
 ---
@@ -325,11 +331,11 @@ Collections are not hardcoded in the serializer. Add support by registering `Bra
 ```csharp
 using Oeeng.Ini.Serializer.Converters;
 
-string ini = IniFile.Serialize(model, s =>
-{
-	s.RegisterConverter(new BracketCollectionConverter());
-	s.RegisterConverter(new MeasurementConverter());
-});
+var serializer = IniFile
+	.RegisterConverter(new BracketCollectionConverter())
+	.RegisterConverter(new MeasurementConverter());
+
+string ini = serializer.Serialize(model);
 ```
 
 This enables syntax like:
@@ -376,9 +382,11 @@ ExpressionY=x * x + 2
 ExpressionZ=x * y + z
 """;
 
-ExpressionSettings settings = IniFile.Deserialize<ExpressionSettings>(
-	iniText,
-	s => s.RegisterExpressions());
+var serializer = IniFile
+	.RegisterConverter(new RoslynExpressionConverter());
+
+var settings = new ExpressionSettings();
+serializer.Deserialize(iniText, settings);
 
 double y = settings.ExpressionY!.Execute(("x", 5));             // 27
 double z = settings.ExpressionZ!.Execute(("x", 2), ("y", 4), ("z", 3)); // 11

@@ -19,22 +19,25 @@ public class IniUtilityTests
         };
 
         // Act
-        string iniText = IniFile.Serialize(model, serializer =>
-            serializer.RegisterConverter(new MeasurementConverter()));
+        string iniText = IniFile.Instance
+            .RegisterConverter(new MeasurementConverter())
+            .Serialize(model);
 
         // Assert
         iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ShouldContain("Distance=12.5 m");
     }
 
     [Fact]
-    public void IniUtility_DeserializeGeneric_UsesConfiguredSerializer()
+    public void IniUtility_Deserialize_UsesConfiguredSerializer()
     {
         // Arrange
         string iniText = "[ConverterSettings]\nDistance=99.9 km\n";
+        var model = new ConverterSettings();
 
         // Act
-        var model = IniFile.Deserialize<ConverterSettings>(iniText, serializer =>
-            serializer.RegisterConverter(new MeasurementConverter()));
+        IniFile.Instance
+            .RegisterConverter(new MeasurementConverter())
+            .Deserialize(iniText, model);
 
         // Assert
         model.Distance.Value.ShouldBe(99.9m);
@@ -49,8 +52,9 @@ public class IniUtilityTests
         var model = new ConverterSettings();
 
         // Act
-        object result = IniFile.Deserialize(iniText, model, serializer =>
-            serializer.RegisterConverter(new MeasurementConverter()));
+        object result = IniFile.Instance
+            .RegisterConverter(new MeasurementConverter())
+            .Deserialize(iniText, model);
 
         // Assert
         result.ShouldBeSameAs(model);
