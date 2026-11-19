@@ -78,12 +78,10 @@ var model = new AppSettings
 	Port = 8080
 };
 
-var serializer = IniFile.Instance.RegisterConverter(new BracketCollectionConverter());
-
-string iniText = serializer.Serialize(model);
+string iniText = IniFile.Instance.Serialize(model);
 
 var deserialized = new AppSettings();
-serializer.Deserialize(iniText, deserialized);
+IniFile.Instance.Deserialize(iniText, deserialized);
 ```
 
 ```csharp
@@ -109,13 +107,16 @@ Port=8080
 ### Utility API (recommended entry)
 
 ```csharp
-IniSerializer serializer = IniFile.Instance;
-serializer.RegisterConverter(IIniValueConverter converter);
-string ini = serializer.Serialize(object dataModel);
-object model = serializer.Deserialize(string iniText, object dataModel, Dictionary<string, object>? replaceMappingList = null);
+string ini = IniFile.Instance.Serialize(object dataModel);
+object model = IniFile.Instance.Deserialize(string iniText, object dataModel, Dictionary<string, object>? replaceMappingList = null);
+
+// optional only when needed:
+string iniWithCustomConverter = IniFile.Instance
+	.RegisterConverter(IIniValueConverter converter)
+	.Serialize(object dataModel);
 ```
 
-### Service API
+### Service API (additional usage)
 
 ```csharp
 var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer();
@@ -201,9 +202,10 @@ public interface IIniValueConverter
 ### Registration
 
 ```csharp
+using Oeeng.Ini.Serializer;
 using Oeeng.Ini.Serializer.Extensions;
 
-var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer()
+var serializer = IniFile.Instance
 	.RegisterConverter(new MyCustomConverter());
 ```
 
@@ -250,7 +252,7 @@ Use it:
 ```csharp
 var config = new DeviceConfig { Distance = new Measurement(12.5m, "m") };
 
-string ini = IniFile
+string ini = IniFile.Instance
 	.RegisterConverter(new MeasurementConverter())
 	.Serialize(config);
 ```
@@ -262,6 +264,8 @@ string ini = IniFile
 You can mark properties with `[Template]` so serialization writes placeholders and deserialization can resolve them from a mapping dictionary.
 
 A practical reason is security: plain-text config files increasingly become an attack surface when secrets are committed or shared by mistake. Template placeholders help avoid storing raw secrets in INI files by keeping only tokens in config and injecting real values at runtime.
+
+Security intention: keep credentials, API keys, and environment-specific secrets out of repository-tracked INI files and resolve them during startup/deployment from secure sources.
 
 Simple template property:
 
@@ -314,7 +318,7 @@ Deserialization with placeholder mapping:
 ```csharp
 var model = new NestedTemplateRootSettings();
 
-serializer.Deserialize(iniText, model, new Dictionary<string, object>
+IniFile.Instance.Deserialize(iniText, model, new Dictionary<string, object>
 {
 	["RootToken"] = "root-value",
 	["Level1Token"] = "level1-value",
@@ -331,11 +335,10 @@ Collections are not hardcoded in the serializer. Add support by registering `Bra
 ```csharp
 using Oeeng.Ini.Serializer.Converters;
 
-var serializer = IniFile
+string ini = IniFile.Instance
 	.RegisterConverter(new BracketCollectionConverter())
-	.RegisterConverter(new MeasurementConverter());
-
-string ini = serializer.Serialize(model);
+	.RegisterConverter(new MeasurementConverter())
+	.Serialize(model);
 ```
 
 This enables syntax like:
@@ -374,7 +377,7 @@ Usage:
 
 ```csharp
 using Oeeng.Ini.Serializer;
-using Oeeng.Ini.Serializer.Extensions;
+using Oeeng.Ini.Serializer.Converters;
 
 string iniText = """
 [ExpressionSettings]
@@ -382,11 +385,10 @@ ExpressionY=x * x + 2
 ExpressionZ=x * y + z
 """;
 
-var serializer = IniFile
-	.RegisterConverter(new RoslynExpressionConverter());
-
 var settings = new ExpressionSettings();
-serializer.Deserialize(iniText, settings);
+IniFile.Instance
+	.RegisterConverter(new RoslynExpressionConverter())
+	.Deserialize(iniText, settings);
 
 double y = settings.ExpressionY!.Execute(("x", 5));             // 27
 double z = settings.ExpressionZ!.Execute(("x", 2), ("y", 4), ("z", 3)); // 11

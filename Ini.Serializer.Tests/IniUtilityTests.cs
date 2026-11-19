@@ -62,6 +62,40 @@ public class IniUtilityTests
         model.Distance.Unit.ShouldBe("mm");
     }
 
+    [Fact]
+    public void IniUtility_Serialize_WithoutRegisterCall()
+    {
+        // Arrange
+        var model = new SimpleIniUtilitySettings
+        {
+            Name = "demo",
+            Port = 8080
+        };
+
+        // Act
+        string iniText = IniFile.Instance.Serialize(model);
+
+        // Assert
+        iniText.ShouldContain("[SimpleIniUtilitySettings]");
+        iniText.ShouldContain("Name=demo");
+        iniText.ShouldContain("Port=8080");
+    }
+
+    [Fact]
+    public void IniUtility_Deserialize_WithoutRegisterCall()
+    {
+        // Arrange
+        string iniText = "[SimpleIniUtilitySettings]\nName=demo\nPort=8080\n";
+        var model = new SimpleIniUtilitySettings();
+
+        // Act
+        IniFile.Instance.Deserialize(iniText, model);
+
+        // Assert
+        model.Name.ShouldBe("demo");
+        model.Port.ShouldBe(8080);
+    }
+
     private readonly record struct Measurement(decimal Value, string Unit);
 
     private sealed class ConverterSettings
