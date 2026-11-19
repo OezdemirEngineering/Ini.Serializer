@@ -138,8 +138,6 @@ After applying comments once, the map is cleared.
 Example:
 
 ```csharp
-var serializer = new Oeeng.Ini.Serializer.Services.IniSerializer();
-
 string ini = """
 [AppSettings]
 ; global comment
@@ -148,10 +146,10 @@ Port=8080
 """;
 
 var model = new AppSettings();
-serializer.Deserialize(ini, model);
+IniFile.Instance.Deserialize(ini, model);
 model.Port = 9090;
 
-string updated = serializer.Serialize(model);
+string updated = IniFile.Instance.Serialize(model);
 ```
 
 Result keeps comments and updates values.
@@ -255,6 +253,13 @@ var config = new DeviceConfig { Distance = new Measurement(12.5m, "m") };
 string ini = IniFile.Instance
 	.RegisterConverter(new MeasurementConverter())
 	.Serialize(config);
+```
+
+Output:
+
+```ini
+[DeviceConfig]
+Distance=12.5 m
 ```
 
 ---
