@@ -18,6 +18,7 @@ This library combines both worlds:
 - INI format stays simple and readable
 - serialization is model-based and reflection-driven
 - any custom conversion strategy can be plugged in from outside
+- template placeholders help keep secrets out of plain-text config files
 
 ---
 
@@ -39,6 +40,7 @@ This allows you to keep INI but still get flexible serialization behavior simila
 - Optional collection support via converter (`BracketCollectionConverter`)
 - Optional Roslyn expression support via extension (`RegisterExpressions`)
 - Utility entry point API (`IniFile.Serialize`, `IniFile.Deserialize`)
+- Template placeholders via `[Template]` for simple and nested properties
 - Comment-aware round-trip after `Deserialize` (preserves full-line and inline comments)
 
 ---
@@ -245,6 +247,73 @@ Use it:
 var config = new DeviceConfig { Distance = new Measurement(12.5m, "m") };
 
 string ini = IniFile.Serialize(config, s => s.RegisterConverter(new MeasurementConverter()));
+```
+
+---
+
+## Example: template placeholders (`[Template]`)
+
+You can mark properties with `[Template]` so serialization writes placeholders and deserialization can resolve them from a mapping dictionary.
+
+A practical reason is security: plain-text config files increasingly become an attack surface when secrets are committed or shared by mistake. Template placeholders help avoid storing raw secrets in INI files by keeping only tokens in config and injecting real values at runtime.
+
+Simple template property:
+
+```csharp
+public sealed class TemplatedSettings
+{
+	public string Name { get; set; } = string.Empty;
+
+	[Template]
+	public string TemplatedProperty { get; set; } = string.Empty;
+}
+```
+
+Serialized output:
+
+```ini
+[TemplatedSettings]
+Name=John
+TemplatedProperty=%TemplatedProperty%
+```
+
+Nested templates are supported as well:
+
+```csharp
+public sealed class NestedTemplateRootSettings
+{
+	[Template]
+	public string RootTemplate { get; set; } = string.Empty;
+
+	public NestedTemplateLevel1Settings Level1 { get; set; } = new();
+}
+
+public sealed class NestedTemplateLevel1Settings
+{
+	[Template]
+	public string Level1Template { get; set; } = string.Empty;
+
+	public NestedTemplateLevel2Settings Level2 { get; set; } = new();
+}
+
+public sealed class NestedTemplateLevel2Settings
+{
+	[Template]
+	public string Level2Template { get; set; } = string.Empty;
+}
+```
+
+Deserialization with placeholder mapping:
+
+```csharp
+var model = new NestedTemplateRootSettings();
+
+serializer.Deserialize(iniText, model, new Dictionary<string, object>
+{
+	["RootToken"] = "root-value",
+	["Level1Token"] = "level1-value",
+	["Level2Token"] = "level2-value"
+});
 ```
 
 ---
