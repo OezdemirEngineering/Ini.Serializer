@@ -7,7 +7,7 @@ namespace Oeeng.Ini.Serializer.Converters;
 /// <summary>
 /// Converts expression strings to and from <see cref="IniExpression"/> values.
 /// </summary>
-public sealed class RoslynExpressionConverter : IIniValueConverter
+public sealed class ExpressionConverter : IIniValueConverter
 {
     /// <summary>
     /// Determines whether the converter supports the provided target type.

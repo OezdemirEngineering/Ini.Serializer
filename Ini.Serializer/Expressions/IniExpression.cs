@@ -1,6 +1,5 @@
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
-using System.Text.RegularExpressions;
+using Oeeng.Ini.Serializer.Dsl;
+using Oeeng.Ini.Serializer.Dsl.Contracts;
 
 namespace Oeeng.Ini.Serializer.Expressions;
 
@@ -9,16 +8,7 @@ namespace Oeeng.Ini.Serializer.Expressions;
 /// </summary>
 public sealed class IniExpression
 {
-    private static readonly Regex IdentifierPattern = new(@"\b[A-Za-z_]\w*\b", RegexOptions.Compiled);
-
-    private static readonly HashSet<string> ReservedTokens =
-    [
-        "true", "false", "null", "new", "Math"
-    ];
-
-    private static readonly ScriptOptions ScriptExecutionOptions = ScriptOptions.Default
-        .AddImports("System")
-        .AddReferences(typeof(Math).Assembly);
+    private readonly IExpressionNode syntaxTree;
 
     /// <summary>
     /// Initializes a new expression instance from expression text.
@@ -28,7 +18,13 @@ public sealed class IniExpression
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(expression);
         Expression = expression.Trim();
+        syntaxTree = new ExpressionParser().Parse(Expression);
     }
+
+    /// <summary>
+    /// Gets the parsed abstract syntax tree for this expression.
+    /// </summary>
+    public IExpressionNode SyntaxTree => syntaxTree;
 
     /// <summary>
     /// Gets the original expression text.
@@ -44,13 +40,7 @@ public sealed class IniExpression
     {
         ArgumentNullException.ThrowIfNull(variables);
 
-        string transformedExpression = TransformExpression(Expression);
-        var globals = new ExpressionGlobals(variables);
-
-        return CSharpScript.EvaluateAsync<double>(
-            transformedExpression,
-            ScriptExecutionOptions,
-            globals).GetAwaiter().GetResult();
+        return syntaxTree.Evaluate(variables);
     }
 
     /// <summary>
@@ -82,43 +72,4 @@ public sealed class IniExpression
     /// <returns>The raw expression string.</returns>
     public override string ToString() => Expression;
 
-    private static string TransformExpression(string expression)
-    {
-        return IdentifierPattern.Replace(expression, match =>
-        {
-            string token = match.Value;
-            if (ReservedTokens.Contains(token))
-            {
-                return token;
-            }
-
-            int index = match.Index;
-            if (index > 0 && expression[index - 1] == '.')
-            {
-                return token;
-            }
-
-            return $"Variables[\"{token}\"]";
-        });
-    }
-
-    /// <summary>
-    /// Provides script globals used by Roslyn expression execution.
-    /// </summary>
-    public sealed class ExpressionGlobals
-    {
-        /// <summary>
-        /// Initializes a new globals instance.
-        /// </summary>
-        /// <param name="variables">The variable map available to the script.</param>
-        public ExpressionGlobals(IDictionary<string, double> variables)
-        {
-            Variables = variables;
-        }
-
-        /// <summary>
-        /// Gets the variables map exposed to script execution.
-        /// </summary>
-        public IDictionary<string, double> Variables { get; }
-    }
 }

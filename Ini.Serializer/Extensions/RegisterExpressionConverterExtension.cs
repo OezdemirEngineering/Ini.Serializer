@@ -9,7 +9,7 @@ namespace Oeeng.Ini.Serializer.Extensions;
 public static class RegisterExpressionConverterExtension
 {
     /// <summary>
-    /// Registers Roslyn-based expression support for <see cref="Expressions.IniExpression"/> values.
+    /// Registers DSL-based expression support for <see cref="Expressions.IniExpression"/> values.
     /// </summary>
     /// <param name="iniSerializer">The serializer instance to configure.</param>
     /// <returns>The same <paramref name="iniSerializer"/> instance for fluent chaining.</returns>
@@ -17,6 +17,6 @@ public static class RegisterExpressionConverterExtension
     {
         ArgumentNullException.ThrowIfNull(iniSerializer);
 
-        return iniSerializer.RegisterConverter(new RoslynExpressionConverter());
+        return iniSerializer.RegisterConverter(new ExpressionConverter());
     }
 }

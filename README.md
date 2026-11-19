@@ -354,7 +354,9 @@ Distances=[1.2 m,3.4 km]
 
 ---
 
-## Example: runtime expressions (Roslyn, opt-in)
+## Example: runtime expressions (DSL, opt-in)
+
+Expressions are parsed into an abstract syntax tree and evaluated by a custom traversal. No Roslyn runtime is required.
 
 You can store expressions in INI and execute them at runtime after deserialization.
 
@@ -392,7 +394,7 @@ ExpressionZ=x * y + z
 
 var settings = new ExpressionSettings();
 IniFile.Instance
-	.RegisterConverter(new RoslynExpressionConverter())
+	.RegisterConverter(new ExpressionConverter())
 	.Deserialize(iniText, settings);
 
 double y = settings.ExpressionY!.Execute(("x", 5));             // 27
@@ -404,6 +406,7 @@ double z = settings.ExpressionZ!.Execute(("x", 2), ("y", 4), ("z", 3)); // 11
 - Keep INI human-readable while allowing dynamic formulas.
 - Define calculation rules in config without recompiling the app.
 - Supports flexible parameter counts (1..n variables).
+- Uses a custom lexer, parser, AST, and visitor traversal instead of Roslyn.
 
 > Expression execution is intentionally opt-in via extension registration.
 
