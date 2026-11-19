@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Globalization;
 using System.Reflection;
+using Oeeng.Ini.Serializer.Attributes;
 using Oeeng.Ini.Serializer.Contracts;
 using Oeeng.Ini.Serializer.Extensions;
 
@@ -46,7 +47,7 @@ public class IniSerializer
     /// <param name="iniText">The INI text to deserialize.</param>
     /// <param name="dataModel">The model instance to populate.</param>
     /// <returns>The same <paramref name="dataModel"/> instance after deserialization.</returns>
-    public object Deserialize(string iniText, object dataModel)
+    public object Deserialize(string iniText, object dataModel, Dictionary<string, object>? replaceMappingList = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(iniText);
         ArgumentNullException.ThrowIfNull(dataModel);
@@ -56,7 +57,7 @@ public class IniSerializer
         mappedCommentModelType = modelType;
 
         var sections = ParseIniSections(iniText);
-        DeserializeSection(dataModel, modelType.Name, sections);
+        DeserializeSection(dataModel, modelType.Name, sections, replaceMappingList);
         return dataModel;
     }
 
@@ -78,7 +79,7 @@ public class IniSerializer
             throw new InvalidOperationException($"No converter registered for type '{targetType.FullName}'.");
         }
 
-        if (targetType.IsClass && IsComplexModelType(targetType))
+        if (targetType.IsClass && this.TryGetConverter(declaredType, out _))
         {
             throw new InvalidOperationException($"No converter registered for type '{targetType.FullName}'.");
         }
@@ -102,7 +103,7 @@ public class IniSerializer
             throw new InvalidOperationException($"No converter registered for type '{effectiveType.FullName}'.");
         }
 
-        if (effectiveType.IsClass && IsComplexModelType(effectiveType))
+        if (effectiveType.IsClass && this.TryGetConverter(effectiveType, out _))
         {
             throw new InvalidOperationException($"No converter registered for type '{effectiveType.FullName}'.");
         }
@@ -122,7 +123,7 @@ public class IniSerializer
 
     private string SerializeSection(object dataModel, string sectionPath, string serializedStr)
     {
-        serializedStr+=string.Format("[{0}]{1}", sectionPath, Environment.NewLine);
+        serializedStr += string.Format("[{0}]{1}", sectionPath, Environment.NewLine);
 
         PropertyInfo[] props = dataModel.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
         foreach (PropertyInfo prop in props)
@@ -138,18 +139,23 @@ public class IniSerializer
                 continue;
             }
 
-            if (IsComplexModelType(prop.PropertyType))
+
+            if (!prop.IsTemplatedProperty() && !this.TryGetConverter(prop.PropertyType, out _) && prop.PropertyType.IsComplexModelType())
             {
                 serializedStr = SerializeSection(value, string.Format("{0}.{1}", sectionPath, value.GetType().Name), serializedStr);
                 continue;
             }
 
-            serializedStr +=string.Format("{0}={1}{2}", prop.Name, SerializeValue(value, prop.PropertyType), Environment.NewLine);
+            var serializedValue = prop.IsTemplatedProperty() ? prop.GetTemplatePlaceholder() : SerializeValue(value, prop.PropertyType);
+
+            serializedStr += string.Format("{0}={1}{2}", prop.Name, serializedValue, Environment.NewLine);
         }
         return serializedStr;
     }
 
-    private void DeserializeSection(object dataModel, string sectionPath, Dictionary<string, Dictionary<string, string>> sections)
+
+
+    private void DeserializeSection(object dataModel, string sectionPath, Dictionary<string, Dictionary<string, string>> sections, Dictionary<string, object>? replaceMappingList)
     {
         PropertyInfo[] props = dataModel.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
         sections.TryGetValue(sectionPath, out Dictionary<string, string>? valuesByName);
@@ -161,7 +167,7 @@ public class IniSerializer
                 continue;
             }
 
-            if (IsComplexModelType(prop.PropertyType))
+            if (!prop.IsTemplatedProperty() && !this.TryGetConverter(prop.PropertyType, out _) && prop.PropertyType.IsComplexModelType())
             {
                 if (!prop.CanRead)
                 {
@@ -182,7 +188,7 @@ public class IniSerializer
                 }
 
                 string nestedSectionPath = string.Format("{0}.{1}", sectionPath, nestedModel.GetType().Name);
-                DeserializeSection(nestedModel, nestedSectionPath, sections);
+                DeserializeSection(nestedModel, nestedSectionPath, sections, replaceMappingList);
                 continue;
             }
 
@@ -190,43 +196,23 @@ public class IniSerializer
             {
                 continue;
             }
+            object? convertedValue = null;
+            if (prop.IsTemplatedProperty())
+            {
+                var trimmedValue = rawValue.Replace("%", "");
+                replaceMappingList?.TryGetValue(trimmedValue, out convertedValue);
+            }
+            else
+            {
+                convertedValue = DeserializeValue(rawValue, prop.PropertyType);
+            }
 
-            object? convertedValue = DeserializeValue(rawValue, prop.PropertyType);
+
             prop.SetValue(dataModel, convertedValue, null);
         }
     }
 
-    private bool IsComplexModelType(Type type)
-    {
-        Type targetType = Nullable.GetUnderlyingType(type) ?? type;
 
-        if (this.TryGetConverter(targetType, out _))
-        {
-            return false;
-        }
-
-        if (targetType == typeof(string))
-        {
-            return false;
-        }
-
-        if (targetType.IsEnum || targetType.IsPrimitive)
-        {
-            return false;
-        }
-
-        if (targetType == typeof(decimal) || targetType == typeof(DateTime) || targetType == typeof(DateTimeOffset) || targetType == typeof(TimeSpan) || targetType == typeof(Guid))
-        {
-            return false;
-        }
-
-        if (typeof(IEnumerable).IsAssignableFrom(targetType))
-        {
-            return false;
-        }
-
-        return true;
-    }
 
     private static CommentMap ParseComments(string iniText)
     {

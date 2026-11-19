@@ -6,6 +6,7 @@ using Oeeng.Ini.Serializer.Contracts;
 using Oeeng.Ini.Serializer.Expressions;
 using Oeeng.Ini.Serializer.Extensions;
 using Oeeng.Ini.Serializer.Services;
+using Oeeng.Ini.Serializer.Attributes;
 
 namespace Oeeng.Ini.Serializer.Tests;
 
@@ -293,6 +294,88 @@ IsEnabled=False
     }
 
     [Fact]
+    public void Serialize_UsesTemplateAttribute()
+    {
+        // Arrange
+        var serializer = new IniSerializer();
+
+        var model = new TemplatedSettings
+        {
+            Name = "John",
+            TemplatedProperty = "This value should be replaced by a placeholder"
+        };
+
+        // Act
+        string iniText = serializer.Serialize(model);
+
+        // Assert
+        string[] lines = iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        lines.ShouldContain("Name=John");
+        lines.ShouldContain("TemplatedProperty=%TemplatedProperty%");
+    }
+
+    [Fact]
+    public void Serialize_UsesTemplateAttribute_ForClassProperty()
+    {
+        // Arrange
+        var serializer = new IniSerializer();
+
+        var model = new TemplatedSettings
+        {
+            Name = "John",
+            TemplatedChild = new ChildSettings { Flag = true, Codes = [1, 2] }
+        };
+
+        // Act
+        string iniText = serializer.Serialize(model);
+
+        // Assert
+        iniText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+            .ShouldContain("TemplatedChild=%TemplatedChild%");
+    }
+
+    [Fact]
+    public void Deserialize_UsesTemplateAttribute()
+    {
+        // Arrange
+        string iniText = "[TemplatedSettings]\nName=John\nTemplatedProperty=%Property%\n";
+        var serializer = new IniSerializer();
+        var model = new TemplatedSettings();
+
+        // Act
+        serializer.Deserialize(iniText, model, new Dictionary<string, object>
+        {
+            ["Property"] = "I am a Property"
+        });
+
+        // Assert
+        model.Name.ShouldBe("John");
+        model.TemplatedProperty.ShouldBe("I am a Property");
+    }
+
+    [Fact]
+    public void Deserialize_UsesTemplateAttribute_ForClassProperty()
+    {
+        // Arrange
+        string iniText = "[TemplatedSettings]\nName=John\nTemplatedChild=%ChildToken%\n";
+        var serializer = new IniSerializer();
+        var model = new TemplatedSettings();
+        var child = new ChildSettings { Flag = true, Codes = [7, 8] };
+
+        // Act
+        serializer.Deserialize(iniText, model, new Dictionary<string, object>
+        {
+            ["ChildToken"] = child
+        });
+
+        // Assert
+        model.Name.ShouldBe("John");
+        model.TemplatedChild.ShouldNotBeNull();
+        model.TemplatedChild.Flag.ShouldBeTrue();
+        model.TemplatedChild.Codes.ShouldBe([7, 8]);
+    }
+
+    [Fact]
     public void Deserialize_UsesCustomConverterForCollectionElements()
     {
         // Arrange
@@ -374,6 +457,17 @@ IsEnabled=False
         public string Name { get; set; } = string.Empty;
         public int Age { get; set; }
         public bool IsEnabled { get; set; }
+    }
+
+    private sealed class TemplatedSettings
+    {
+        public string Name { get; set; } = string.Empty;
+
+        [Template]
+        public string TemplatedProperty { get; set; } = string.Empty;
+
+        [Template]
+        public ChildSettings TemplatedChild { get; set; } = new();
     }
 
     private sealed class CollectionSettings
