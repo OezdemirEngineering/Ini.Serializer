@@ -103,6 +103,11 @@ public sealed class BracketCollectionConverter : IIniValueConverter
         return targetCollection;
     }
 
+    /// <summary>
+    /// Parses bracket notation into individual raw item strings.
+    /// </summary>
+    /// <param name="rawValue">The raw bracket value.</param>
+    /// <returns>The parsed item values.</returns>
     private static string[] ParseItems(string rawValue)
     {
         string value = rawValue.Trim();
@@ -119,6 +124,11 @@ public sealed class BracketCollectionConverter : IIniValueConverter
         return value.Split(',', StringSplitOptions.TrimEntries);
     }
 
+    /// <summary>
+    /// Resolves the element type for an enumerable collection type.
+    /// </summary>
+    /// <param name="collectionType">The collection type to inspect.</param>
+    /// <returns>The resolved element type.</returns>
     private static Type GetCollectionElementType(Type collectionType)
     {
         if (collectionType.IsArray)

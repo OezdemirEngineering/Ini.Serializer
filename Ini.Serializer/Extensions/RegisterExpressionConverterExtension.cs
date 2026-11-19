@@ -3,6 +3,9 @@ using Oeeng.Ini.Serializer.Services;
 
 namespace Oeeng.Ini.Serializer.Extensions;
 
+/// <summary>
+/// Provides extension methods to register expression conversion support.
+/// </summary>
 public static class RegisterExpressionConverterExtension
 {
     /// <summary>

@@ -76,6 +76,10 @@ public sealed class IniExpression
         return Execute(variables);
     }
 
+    /// <summary>
+    /// Returns the original expression text.
+    /// </summary>
+    /// <returns>The raw expression string.</returns>
     public override string ToString() => Expression;
 
     private static string TransformExpression(string expression)
@@ -98,13 +102,23 @@ public sealed class IniExpression
         });
     }
 
+    /// <summary>
+    /// Provides script globals used by Roslyn expression execution.
+    /// </summary>
     public sealed class ExpressionGlobals
     {
+        /// <summary>
+        /// Initializes a new globals instance.
+        /// </summary>
+        /// <param name="variables">The variable map available to the script.</param>
         public ExpressionGlobals(IDictionary<string, double> variables)
         {
             Variables = variables;
         }
 
+        /// <summary>
+        /// Gets the variables map exposed to script execution.
+        /// </summary>
         public IDictionary<string, double> Variables { get; }
     }
 }

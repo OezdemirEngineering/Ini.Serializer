@@ -7,6 +7,9 @@ using Oeeng.Ini.Serializer.Extensions;
 
 namespace Oeeng.Ini.Serializer.Services;
 
+/// <summary>
+/// Serializes and deserializes models to and from INI text.
+/// </summary>
 public class IniSerializer
 {
     internal List<IIniValueConverter> CustomConverters { get; } = [];
@@ -61,6 +64,12 @@ public class IniSerializer
         return dataModel;
     }
 
+    /// <summary>
+    /// Serializes a single value using converters or invariant formatting.
+    /// </summary>
+    /// <param name="value">The value to serialize.</param>
+    /// <param name="declaredType">The declared property type.</param>
+    /// <returns>The serialized value text.</returns>
     internal string SerializeValue(object? value, Type declaredType)
     {
         if (value is null)
@@ -89,6 +98,12 @@ public class IniSerializer
             : value.ToString() ?? string.Empty;
     }
 
+    /// <summary>
+    /// Deserializes a single raw value using converters or framework conversion.
+    /// </summary>
+    /// <param name="rawValue">The raw value text.</param>
+    /// <param name="targetType">The target type to convert to.</param>
+    /// <returns>The converted value instance.</returns>
     internal object? DeserializeValue(string rawValue, Type targetType)
     {
         Type effectiveType = Nullable.GetUnderlyingType(targetType) ?? targetType;
@@ -121,6 +136,13 @@ public class IniSerializer
         return Convert.ChangeType(rawValue, effectiveType, CultureInfo.InvariantCulture);
     }
 
+    /// <summary>
+    /// Serializes one model section, including nested sections.
+    /// </summary>
+    /// <param name="dataModel">The current model instance.</param>
+    /// <param name="sectionPath">The section path to write.</param>
+    /// <param name="serializedStr">The current serialized buffer.</param>
+    /// <returns>The updated serialized buffer.</returns>
     private string SerializeSection(object dataModel, string sectionPath, string serializedStr)
     {
         serializedStr += string.Format("[{0}]{1}", sectionPath, Environment.NewLine);
@@ -155,6 +177,13 @@ public class IniSerializer
 
 
 
+    /// <summary>
+    /// Deserializes one section into the provided model instance.
+    /// </summary>
+    /// <param name="dataModel">The model instance to populate.</param>
+    /// <param name="sectionPath">The section path to read from.</param>
+    /// <param name="sections">The parsed section dictionary.</param>
+    /// <param name="replaceMappingList">Optional template replacement map.</param>
     private void DeserializeSection(object dataModel, string sectionPath, Dictionary<string, Dictionary<string, string>> sections, Dictionary<string, object>? replaceMappingList)
     {
         PropertyInfo[] props = dataModel.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -214,6 +243,11 @@ public class IniSerializer
 
 
 
+    /// <summary>
+    /// Parses comment metadata from INI text for later re-application.
+    /// </summary>
+    /// <param name="iniText">The source INI text.</param>
+    /// <returns>A mapped comment model.</returns>
     private static CommentMap ParseComments(string iniText)
     {
         var map = new CommentMap();
@@ -272,6 +306,11 @@ public class IniSerializer
         return map;
     }
 
+    /// <summary>
+    /// Parses INI sections and key/value pairs from text.
+    /// </summary>
+    /// <param name="iniText">The source INI text.</param>
+    /// <returns>A section dictionary keyed by section and property name.</returns>
     private static Dictionary<string, Dictionary<string, string>> ParseIniSections(string iniText)
     {
         var sections = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
@@ -316,6 +355,12 @@ public class IniSerializer
         return sections;
     }
 
+    /// <summary>
+    /// Applies mapped comments to serialized INI text.
+    /// </summary>
+    /// <param name="iniText">The serialized INI text without comments.</param>
+    /// <param name="commentMap">The mapped comments to apply.</param>
+    /// <returns>The INI text with comments re-applied.</returns>
     private static string ApplyComments(string iniText, CommentMap commentMap)
     {
         string lineBreak = iniText.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
@@ -369,18 +414,31 @@ public class IniSerializer
         return string.Join(lineBreak, lines);
     }
 
+    /// <summary>
+    /// Clears remembered comment mapping state.
+    /// </summary>
     private void ClearCommentMap()
     {
         mappedComments = null;
         mappedCommentModelType = null;
     }
 
+    /// <summary>
+    /// Removes inline comment text from a line.
+    /// </summary>
+    /// <param name="line">The input line.</param>
+    /// <returns>The line without trailing comment markers.</returns>
     private static string StripComments(string line)
     {
         int commentIndex = FindCommentStartIndex(line);
         return commentIndex >= 0 ? line[..commentIndex] : line;
     }
 
+    /// <summary>
+    /// Finds the first non-escaped comment marker index in a text segment.
+    /// </summary>
+    /// <param name="text">The text segment to inspect.</param>
+    /// <returns>The zero-based index of the comment marker, or -1 when none exists.</returns>
     private static int FindCommentStartIndex(string text)
     {
         bool escaped = false;

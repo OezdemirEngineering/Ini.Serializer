@@ -6,8 +6,16 @@ using System.Text;
 
 namespace Oeeng.Ini.Serializer.Extensions;
 
+/// <summary>
+/// Provides helper methods for type classification.
+/// </summary>
 internal static class TypeExtensions
 {
+    /// <summary>
+    /// Determines whether a type should be treated as a nested complex model.
+    /// </summary>
+    /// <param name="type">The type to classify.</param>
+    /// <returns><see langword="true"/> when the type represents a complex model.</returns>
     internal static bool IsComplexModelType(this Type type)
     {
         Type targetType = Nullable.GetUnderlyingType(type) ?? type;

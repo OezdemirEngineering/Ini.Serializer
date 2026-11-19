@@ -2,6 +2,9 @@ using Oeeng.Ini.Serializer.Services;
 
 namespace Oeeng.Ini.Serializer;
 
+/// <summary>
+/// Provides convenience methods for serializing and deserializing INI text.
+/// </summary>
 public static class IniFile
 {
     /// <summary>
